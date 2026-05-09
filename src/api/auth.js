@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://mc-lms-be.onrender.com/api';
+const BASE_URL = 'https://mc-lms-be.onrender.com/api';
 
 /**
  * Login user and return { user, token }

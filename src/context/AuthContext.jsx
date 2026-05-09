@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
     const initAuth = async () => {
       if (state.token) {
         try {
-          const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/me`, {
+          const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://mc-lms-be.onrender.com'}/auth/me`, {
             headers: { 'Authorization': `Bearer ${state.token}` }
           });
           if (res.ok) {
