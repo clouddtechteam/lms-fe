@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '../layouts/DashboardLayout.jsx';
 import { getBatches } from '../api/batches.js';
-import { getStudents } from '../api/students.js';
 import { getTrainers } from '../api/trainers.js';
+import { getStudents } from '../api/students.js';
+
+
 
 const styles = `
   .lms-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 32px; }
@@ -20,21 +22,17 @@ const styles = `
 `;
 
 const AdminDashboard = () => {
-  const [stats, setStats] = useState({ batches: 0, students: 0, trainers: 0, revenue: 0 });
+  const [stats, setStats] = useState({ batches: 0, trainers: 0, students: 0 });
 
   useEffect(() => {
     const fetchStats = async () => {
       const b = await getBatches();
-      const s = await getStudents();
       const t = await getTrainers();
-      
-      const revenue = (s || []).reduce((acc, curr) => acc + (curr.subscription?.paidAmount || 0), 0);
-      
+      const s = await getStudents();
       setStats({
         batches: b?.length || 0,
-        students: s?.length || 0,
         trainers: t?.length || 0,
-        revenue
+        students: s?.length || 0,
       });
     };
     fetchStats();
@@ -46,58 +44,30 @@ const AdminDashboard = () => {
       
       <div className="lms-stats-grid">
         <div className="lms-stat-card">
-          <div className="lms-stat-icon" style={{ background: '#eff6ff', color: '#1a73e8' }}>📚</div>
-          <div>
-            <span className="lms-stat-value">{stats.batches}</span>
-            <span className="lms-stat-label">Total Batches</span>
+          <div className="lms-stat-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
           </div>
-        </div>
-        <div className="lms-stat-card">
-          <div className="lms-stat-icon" style={{ background: '#ecfdf5', color: '#10b981' }}>🎓</div>
           <div>
             <span className="lms-stat-value">{stats.students}</span>
             <span className="lms-stat-label">Total Students</span>
           </div>
         </div>
         <div className="lms-stat-card">
-          <div className="lms-stat-icon" style={{ background: '#fff7ed', color: '#f97316' }}>👨‍🏫</div>
+          <div className="lms-stat-icon" style={{ background: '#eff6ff', color: '#1a73e8' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          </div>
           <div>
-            <span className="lms-stat-value">{stats.trainers}</span>
-            <span className="lms-stat-label">Active Trainers</span>
+            <span className="lms-stat-value">{stats.batches}</span>
+            <span className="lms-stat-label">Total Batches</span>
           </div>
         </div>
         <div className="lms-stat-card">
-          <div className="lms-stat-icon" style={{ background: '#fef2f2', color: '#ef4444' }}>💰</div>
+          <div className="lms-stat-icon" style={{ background: '#fff7ed', color: '#f97316' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 22 11"></polyline></svg>
+          </div>
           <div>
-            <span className="lms-stat-value">₹{stats.revenue.toLocaleString()}</span>
-            <span className="lms-stat-label">Total Revenue</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="lms-grid-2">
-        <div className="lms-panel">
-          <div className="lms-panel-title">Recent Admissions</div>
-          <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Charts and activity logs will appear here.</p>
-          <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', borderRadius: '12px', border: '2px dashed #e2e8f0', color: '#94a3b8' }}>
-            Activity Feed Preview
-          </div>
-        </div>
-        <div className="lms-panel">
-          <div className="lms-panel-title">System Status</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-              <span>Server</span>
-              <span style={{ color: '#10b981', fontWeight: 600 }}>● Online</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-              <span>Database</span>
-              <span style={{ color: '#10b981', fontWeight: 600 }}>● Connected</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-              <span>Last Backup</span>
-              <span style={{ color: '#64748b' }}>2 mins ago</span>
-            </div>
+            <span className="lms-stat-value">{stats.trainers}</span>
+            <span className="lms-stat-label">Active Trainers</span>
           </div>
         </div>
       </div>

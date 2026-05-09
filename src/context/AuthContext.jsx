@@ -21,6 +21,13 @@ const authReducer = (state, action) => {
         role: action.payload.user.role,
         loading: false,
       };
+    case 'SET_USER':
+      return {
+        ...state,
+        user: action.payload,
+        role: action.payload.role,
+        loading: false,
+      };
     case 'LOGOUT':
       localStorage.removeItem('lms_token');
       localStorage.removeItem('lms_role');
@@ -36,12 +43,26 @@ export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
   useEffect(() => {
-    // Mark loading done if no token
-    if (!state.token) {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    } else {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
+    const initAuth = async () => {
+      if (state.token) {
+        try {
+          const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/me`, {
+            headers: { 'Authorization': `Bearer ${state.token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            dispatch({ type: 'SET_USER', payload: data });
+          } else {
+            dispatch({ type: 'LOGOUT' });
+          }
+        } catch (err) {
+          dispatch({ type: 'SET_LOADING', payload: false });
+        }
+      } else {
+        dispatch({ type: 'SET_LOADING', payload: false });
+      }
+    };
+    initAuth();
   }, []);
 
   const login = (data) => dispatch({ type: 'LOGIN', payload: data });
@@ -49,7 +70,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ ...state, login, logout }}>
-      {children}
+      {!state.loading && children}
     </AuthContext.Provider>
   );
 };

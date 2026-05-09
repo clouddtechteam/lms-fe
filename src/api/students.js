@@ -1,40 +1,70 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://mc-lms-be.onrender.com/api';
 
-const getHeaders = () => ({
-  'Authorization': `Bearer ${localStorage.getItem('lms_token')}`,
-  'Content-Type': 'application/json'
-});
+const getHeaders = () => {
+  const token = localStorage.getItem('lms_token');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': token ? `Bearer ${token}` : '',
+  };
+};
 
 export const getStudents = async () => {
   const res = await fetch(`${BASE_URL}/students`, { headers: getHeaders() });
-  return await res.json();
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to fetch students');
+  return data;
 };
 
-export const createStudent = async (data) => {
+export const createStudent = async (studentData) => {
   const res = await fetch(`${BASE_URL}/students`, {
     method: 'POST',
     headers: getHeaders(),
-    body: JSON.stringify(data)
+    body: JSON.stringify(studentData),
   });
-  return await res.json();
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to create student');
+  return data;
 };
 
-export const importStudents = async (file) => {
-  const formData = new FormData();
-  formData.append('file', file);
+export const importStudents = async (dataList) => {
   const res = await fetch(`${BASE_URL}/students/import`, {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${localStorage.getItem('lms_token')}` },
-    body: formData
+    headers: getHeaders(),
+    body: JSON.stringify(dataList),
   });
-  return await res.json();
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to import students');
+  return data;
 };
 
-export const updateSubscription = async (studentId, subId, data) => {
-  const res = await fetch(`${BASE_URL}/students/${studentId}/subscriptions/${subId}`, {
+export const deleteStudent = async (id) => {
+  const res = await fetch(`${BASE_URL}/students/${id}`, {
+    method: 'DELETE',
+    headers: getHeaders()
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to delete student');
+  return data;
+};
+
+export const updateStudent = async (id, studentData) => {
+  const res = await fetch(`${BASE_URL}/students/${id}`, {
     method: 'PUT',
     headers: getHeaders(),
-    body: JSON.stringify(data)
+    body: JSON.stringify(studentData),
   });
-  return await res.json();
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to update student');
+  return data;
+};
+
+export const addSubscription = async (studentId, batchId) => {
+  const res = await fetch(`${BASE_URL}/students/add-subscription`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ studentId, batchId }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to add subscription');
+  return data;
 };

@@ -358,18 +358,12 @@ const Login = () => {
               and scale as you grow — whether you're a student, trainer, or admin.
             </p>
             <div className="lms-hero-stats">
-              <div className="lms-stat-item">
-                <span className="lms-stat-num">10K+</span>
-                <span className="lms-stat-label">Students</span>
-              </div>
+
               <div className="lms-stat-item">
                 <span className="lms-stat-num">500+</span>
                 <span className="lms-stat-label">Courses</span>
               </div>
-              <div className="lms-stat-item">
-                <span className="lms-stat-num">200+</span>
-                <span className="lms-stat-label">Trainers</span>
-              </div>
+
             </div>
           </div>
         </div>

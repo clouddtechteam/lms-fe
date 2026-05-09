@@ -5,8 +5,13 @@ import StudentDashboard from '../pages/StudentDashboard.jsx';
 import TrainerDashboard from '../pages/TrainerDashboard.jsx';
 import AdminDashboard from '../pages/AdminDashboard.jsx';
 import AdminBatches from '../pages/admin/Batches.jsx';
-import AdminStudents from '../pages/admin/Students.jsx';
 import AdminTrainers from '../pages/admin/Trainers.jsx';
+import AdminStudents from '../pages/admin/Students.jsx';
+import LiveClass from '../pages/LiveClass.jsx';
+import StudentClasses from '../pages/student/Classes.jsx';
+import TrainerClasses from '../pages/trainer/Classes.jsx';
+
+
 
 // Protected route — redirect to /login if not authenticated
 const PrivateRoute = ({ children, allowedRoles }) => {
@@ -72,6 +77,8 @@ const AppRouter = () => (
           </PrivateRoute>
         }
       />
+
+
       <Route
         path="/admin/students"
         element={
@@ -81,10 +88,34 @@ const AppRouter = () => (
         }
       />
       <Route
+        path="/live/:batchId"
+        element={
+          <PrivateRoute allowedRoles={['admin', 'trainer', 'student']}>
+            <LiveClass />
+          </PrivateRoute>
+        }
+      />
+      <Route
         path="/admin/trainers"
         element={
           <PrivateRoute allowedRoles={['admin']}>
             <AdminTrainers />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/student/classes"
+        element={
+          <PrivateRoute allowedRoles={['student']}>
+            <StudentClasses />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/trainer/classes"
+        element={
+          <PrivateRoute allowedRoles={['trainer']}>
+            <TrainerClasses />
           </PrivateRoute>
         }
       />
