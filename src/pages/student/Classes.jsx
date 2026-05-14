@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { getBatches } from '../../api/batches.js';
-import { getMeetByBatch } from '../../api/meet.js';
+import { getMeetByBatch, getMyLiveClasses } from '../../api/meet.js';
 import { useNavigate } from 'react-router-dom';
 
 const styles = `
@@ -55,6 +55,14 @@ const canJoinSession = (meet, batch) => {
   if (meet.status === 'ended') return false;
   
   const now = new Date();
+  
+  // 1. Weekday Check: Only allow if today matches OR if no weekdays are set
+  const today = now.getDay();
+  if (batch.weekdays && batch.weekdays.length > 0 && !batch.weekdays.includes(today)) {
+    return false;
+  }
+
+  // 2. Time Window Check
   const start = parseBatchTime(batch.startTime);
   const end = parseBatchTime(batch.endTime);
   
@@ -82,27 +90,18 @@ const StudentClasses = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
   useEffect(() => {
     const fetchMyClasses = async () => {
       try {
-        const allBatches = await getBatches();
-        const myBatchIds = user?.batchIds || [];
+        // Fetch only classes for today via the updated backend API
+        const liveMeets = await getMyLiveClasses();
         
-        // Match by any of the identifiers
-        const myBatches = allBatches.filter(b => 
-          myBatchIds.includes(b._id) || 
-          myBatchIds.includes(b.batchId) || 
-          myBatchIds.includes(b.name)
-        );
-        
-        const batchesWithMeets = await Promise.all(myBatches.map(async (batch) => {
-          try {
-            const meets = await getMeetByBatch(batch._id);
-            // meets is now an array from the backend
-            return { ...batch, meets: Array.isArray(meets) ? meets : [] };
-          } catch {
-            return { ...batch, meets: [] };
-          }
+        // Map meets back to a structure the UI expects
+        const batchesWithMeets = liveMeets.map(m => ({
+          ...m.batch,
+          meets: [m]
         }));
         
         setBatches(batchesWithMeets);
@@ -127,6 +126,13 @@ const StudentClasses = () => {
             <div key={b._id} className="class-card">
               <span className="batch-badge">Enrolled</span>
               <div className="batch-name">{b.name}</div>
+              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                {b.weekdays && b.weekdays.map(d => (
+                  <span key={d} className="lms-badge" style={{ background: '#f1f5f9', color: '#475569', fontSize: '0.7rem', margin: 0 }}>
+                    {DAYS[d]}
+                  </span>
+                ))}
+              </div>
               <div className="batch-time">
                 🕒 {b.startTime} - {b.endTime}
               </div>

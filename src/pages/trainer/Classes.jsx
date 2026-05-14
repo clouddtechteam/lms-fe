@@ -53,8 +53,17 @@ const canJoinSession = (meet) => {
   if (meet.status === 'ended') return false;
   
   const now = new Date();
-  const start = parseBatchTime(meet.batch?.startTime);
-  const end = parseBatchTime(meet.batch?.endTime);
+  const b = meet.batch || {};
+
+  // 1. Weekday Check
+  const today = now.getDay();
+  if (b.weekdays && b.weekdays.length > 0 && !b.weekdays.includes(today)) {
+    return false;
+  }
+
+  // 2. Time Window Check
+  const start = parseBatchTime(b.startTime);
+  const end = parseBatchTime(b.endTime);
   
   if (!start || !end) return false;
 
@@ -68,6 +77,8 @@ const TrainerClasses = () => {
   const [meets, setMeets] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   useEffect(() => {
     getTrainerLiveClasses()
@@ -96,6 +107,13 @@ const TrainerClasses = () => {
                 </span>
 
                 <div className="batch-name">{b.name}</div>
+                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                  {b.weekdays && b.weekdays.map(d => (
+                    <span key={d} className="lms-badge" style={{ background: '#f1f5f9', color: '#475569', fontSize: '0.7rem', margin: 0 }}>
+                      {DAYS[d]}
+                    </span>
+                  ))}
+                </div>
                 <div className="batch-time">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                   {b.startTime} - {b.endTime}

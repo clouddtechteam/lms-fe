@@ -8,12 +8,14 @@ import '../../admin-unified.css';
 const Batches = () => {
   const [batches, setBatches] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ name: '', startTime: '09:00', endTime: '18:00' });
+  const [formData, setFormData] = useState({ name: '', startTime: '09:00', endTime: '18:00', weekdays: [] });
   const [loading, setLoading] = useState(false);
   const [importFile, setImportFile] = useState(null);
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [meetData, setMeetData] = useState({ meetingNumber: '', password: '', status: 'scheduled' });
   const [batchDetails, setBatchDetails] = useState({ students: [], trainers: [] });
+
+  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const displayTime = (t) => {
     if (!t) return '';
@@ -89,7 +91,7 @@ const Batches = () => {
     setLoading(false);
     if (!res.message || !res.error) {
       setShowModal(false);
-      setFormData({ name: '', startTime: '09:00', endTime: '18:00' });
+      setFormData({ name: '', startTime: '09:00', endTime: '18:00', weekdays: [] });
       fetchBatches();
     } else {
       alert(res.message);
@@ -131,9 +133,16 @@ const Batches = () => {
                   <td style={{ color: '#94a3b8' }}>#{b.batchId || (idx + 1)}</td>
                   <td style={{ fontWeight: 600 }}>{b.name}</td>
                   <td>
-                    <span className="lms-badge" style={{ background: '#eff6ff', color: '#2563eb' }}>
-                      {displayTime(b.startTime)} - {displayTime(b.endTime)}
-                    </span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                      <span className="lms-badge" style={{ background: '#eff6ff', color: '#2563eb' }}>
+                        {displayTime(b.startTime)} - {displayTime(b.endTime)}
+                      </span>
+                      {b.weekdays && b.weekdays.map(d => (
+                        <span key={d} className="lms-badge" style={{ background: '#f1f5f9', color: '#475569', fontSize: '0.7rem' }}>
+                          {DAYS[d]}
+                        </span>
+                      ))}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -150,9 +159,18 @@ const Batches = () => {
               </div>
 
               <div style={{ marginBottom: '24px' }}>
-                <div style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '20px' }}>
+                <div style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '10px' }}>
                   Timing: <strong>{displayTime(selectedBatch.startTime)} - {displayTime(selectedBatch.endTime)}</strong>
                 </div>
+                {selectedBatch.weekdays && selectedBatch.weekdays.length > 0 && (
+                  <div style={{ marginBottom: '20px', display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                    {selectedBatch.weekdays.map(d => (
+                      <span key={d} className="lms-badge" style={{ background: '#f1f5f9', color: '#475569' }}>
+                        {DAYS[d]}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <span className="panel-label">Meeting Credentials</span>
                 <div className="lms-form-group">
                   <label>Zoom Meeting ID</label>
@@ -224,6 +242,27 @@ const Batches = () => {
                 <div className="lms-form-group">
                   <label>End</label>
                   <input className="lms-input" type="time" value={formData.endTime} onChange={e => setFormData({...formData, endTime: e.target.value})} />
+                </div>
+              </div>
+              <div className="lms-form-group">
+                <label>Weekdays</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '5px' }}>
+                  {DAYS.map((day, idx) => (
+                    <label key={day} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', cursor: 'pointer', background: formData.weekdays.includes(idx) ? '#eff6ff' : '#f8fafc', padding: '4px 8px', borderRadius: '4px', border: '1px solid', borderColor: formData.weekdays.includes(idx) ? '#2563eb' : '#e2e8f0' }}>
+                      <input 
+                        type="checkbox" 
+                        hidden
+                        checked={formData.weekdays.includes(idx)} 
+                        onChange={e => {
+                          const newDays = e.target.checked 
+                            ? [...formData.weekdays, idx].sort()
+                            : formData.weekdays.filter(d => d !== idx);
+                          setFormData({...formData, weekdays: newDays});
+                        }} 
+                      />
+                      {day}
+                    </label>
+                  ))}
                 </div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>

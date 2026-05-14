@@ -16,15 +16,24 @@ const parseBatchTime = (timeStr) => {
 // Find the single meet most relevant to current time
 // Priority: live > currently in window (start <= now <= end) > next upcoming > most recent past
 const findClosestMeet = (meets) => {
-  if (!meets.length) return null;
+  if (!meets || !meets.length) return null;
   const now = new Date();
+  const today = now.getDay();
 
-  // 1. Explicitly marked live
-  const liveClass = meets.find(m => m.status === 'live');
+  // 1. Filter for classes that match today's weekday (or have no weekdays set)
+  const todaysMeets = meets.filter(m => {
+    const b = m.batch || {};
+    return !b.weekdays || b.weekdays.length === 0 || b.weekdays.includes(today);
+  });
+
+  if (todaysMeets.length === 0) return null;
+
+  // 2. Explicitly marked live
+  const liveClass = todaysMeets.find(m => m.status === 'live');
   if (liveClass) return liveClass;
 
-  // 2. Currently within the time window (even if status is still 'scheduled')
-  const inWindow = meets.find(m => {
+  // 3. Currently within the time window
+  const inWindow = todaysMeets.find(m => {
     if (m.status === 'ended') return false;
     const start = parseBatchTime(m.batch?.startTime);
     const end = parseBatchTime(m.batch?.endTime);
@@ -32,10 +41,10 @@ const findClosestMeet = (meets) => {
   });
   if (inWindow) return inWindow;
 
-  // 3. Next upcoming (smallest positive delta from startTime)
+  // 4. Next upcoming for today
   let nextUpcoming = null;
   let smallestFutureDelta = Infinity;
-  for (const meet of meets) {
+  for (const meet of todaysMeets) {
     if (meet.status === 'ended') continue;
     const start = parseBatchTime(meet.batch?.startTime);
     if (!start) continue;
@@ -47,10 +56,10 @@ const findClosestMeet = (meets) => {
   }
   if (nextUpcoming) return nextUpcoming;
 
-  // 4. Fallback: most recently ended class
+  // 5. Fallback: most recently ended class today
   let latestPast = null;
   let latestTime = -Infinity;
-  for (const meet of meets) {
+  for (const meet of todaysMeets) {
     const end = parseBatchTime(meet.batch?.endTime);
     if (end && end.getTime() > latestTime) { latestTime = end.getTime(); latestPast = meet; }
   }
@@ -64,8 +73,17 @@ const canJoinSession = (meet) => {
   if (meet.status === 'ended') return false;
   
   const now = new Date();
-  const start = parseBatchTime(meet.batch?.startTime);
-  const end = parseBatchTime(meet.batch?.endTime);
+  const b = meet.batch || {};
+
+  // 1. Weekday Check
+  const today = now.getDay();
+  if (b.weekdays && b.weekdays.length > 0 && !b.weekdays.includes(today)) {
+    return false;
+  }
+
+  // 2. Time Window Check
+  const start = parseBatchTime(b.startTime);
+  const end = parseBatchTime(b.endTime);
   
   if (!start || !end) return false;
 
@@ -307,6 +325,13 @@ const TrainerDashboard = () => {
               <div>
                 <h4 style={{ margin: '0 0 4px 0', color: '#1e293b' }}>{closestMeet.batch?.name}</h4>
                 <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '4px' }}>Batch: {closestMeet.batch?.batchId || 'N/A'}</div>
+                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', margin: '8px 0' }}>
+                  {closestMeet.batch?.weekdays && closestMeet.batch.weekdays.map(d => (
+                    <span key={d} style={{ background: '#e2e8f0', color: '#475569', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]}
+                    </span>
+                  ))}
+                </div>
                 <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155' }}>
                   🕐 {closestMeet.batch?.startTime} – {closestMeet.batch?.endTime}
                 </div>
