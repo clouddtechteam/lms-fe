@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { changePassword } from '../api/auth.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const ChangePasswordModal = ({ isOpen, onClose }) => {
+  const { token } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -31,8 +33,8 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
       await changePassword(token, currentPassword, newPassword);
+
       setSuccess('Password changed successfully!');
       setCurrentPassword('');
       setNewPassword('');
