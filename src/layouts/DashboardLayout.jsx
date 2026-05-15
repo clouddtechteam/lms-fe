@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import ChangePasswordModal from '../components/ChangePasswordModal.jsx';
+
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -164,10 +166,59 @@ const styles = `
     .lms-content { padding: 20px; }
   }
 
+
   @media (min-width: 769px) {
     .lms-overlay { display: none; }
   }
+
+  /* ── Global Utility Styles ── */
+  .lms-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .lms-btn-primary { background: #1a73e8; color: white; }
+  .lms-btn-primary:hover { background: #1557b0; }
+  .lms-btn-outline { background: white; border: 1px solid #e2e8f0; color: #475569; }
+  .lms-btn-outline:hover { background: #f8fafc; border-color: #cbd5e1; }
+  
+  .lms-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    outline: none;
+  }
+  .lms-input:focus { border-color: #1a73e8; box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.1); }
+
+  .lms-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center; z-index: 1000;
+    padding: 20px;
+  }
+  .lms-modal {
+    background: white; border-radius: 20px; width: 100%; max-width: 500px;
+    padding: 32px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
+    position: relative;
+    animation: lms-modal-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @keyframes lms-modal-in {
+    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
 `;
+
 
 const DashboardLayout = ({ children, title }) => {
   const { user, role, logout } = useAuth();
@@ -175,6 +226,8 @@ const DashboardLayout = ({ children, title }) => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const [isCPModalOpen, setIsCPModalOpen] = useState(false);
+
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -252,7 +305,15 @@ const DashboardLayout = ({ children, title }) => {
             </div>
 
             <div className="lms-header-right">
+              <button 
+                className="lms-btn lms-btn-outline" 
+                style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                onClick={() => setIsCPModalOpen(true)}
+              >
+                Change Password
+              </button>
               <div className="lms-user-info" onClick={() => navigate(`/${role}/profile`)}>
+
                 <div className="lms-user-text" style={{ textAlign: 'right' }}>
                   <span className="lms-user-name">{user?.name}</span>
                   <span className="lms-user-role">{role}</span>
@@ -267,7 +328,10 @@ const DashboardLayout = ({ children, title }) => {
           </div>
         </main>
       </div>
+
+      <ChangePasswordModal isOpen={isCPModalOpen} onClose={() => setIsCPModalOpen(false)} />
     </>
+
   );
 };
 

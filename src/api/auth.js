@@ -39,3 +39,19 @@ export const getMe = async (token) => {
   if (!res.ok) throw new Error(data.message || 'Failed to fetch profile');
   return data;
 };
+/**
+ * Change user password
+ */
+export const changePassword = async (token, currentPassword, newPassword) => {
+  const res = await fetch(`${BASE_URL}/auth/change-password`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to change password');
+  return data;
+};
