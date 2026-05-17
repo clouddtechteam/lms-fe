@@ -16,7 +16,7 @@ const styles = `
   /* ── Left hero panel ── */
   .lms-hero {
     flex: 1;
-    background: linear-gradient(135deg, #1a73e8 0%, #1557b0 40%, #0d3a78 100%);
+    background: linear-gradient(135deg, #facc15 0%, #f59e0b 40%, #d97706 100%);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -30,8 +30,8 @@ const styles = `
     position: absolute;
     inset: 0;
     background-image:
-      radial-gradient(circle at 15% 30%, rgba(255,255,255,0.07) 0%, transparent 50%),
-      radial-gradient(circle at 80% 70%, rgba(255,255,255,0.05) 0%, transparent 45%);
+      radial-gradient(circle at 15% 30%, rgba(0,0,0,0.06) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(0,0,0,0.04) 0%, transparent 45%);
   }
 
   /* Decorative wave lines */
@@ -69,23 +69,23 @@ const styles = `
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(0,0,0,0.12);
+    border: 1px solid rgba(0,0,0,0.18);
     border-radius: 50px;
     padding: 6px 16px;
-    color: #e8f0fe;
+    color: #000000;
     font-size: 0.78rem;
-    font-weight: 500;
+    font-weight: 600;
     letter-spacing: 0.04em;
     margin-bottom: 28px;
     backdrop-filter: blur(8px);
   }
-  .lms-hero-badge span { width: 7px; height: 7px; background: #4fc3f7; border-radius: 50%; display: block; }
+  .lms-hero-badge span { width: 7px; height: 7px; background: #000000; border-radius: 50%; display: block; }
 
   .lms-hero h1 {
     font-size: clamp(2rem, 3.5vw, 3rem);
     font-weight: 800;
-    color: #ffffff;
+    color: #000000;
     line-height: 1.2;
     margin-bottom: 20px;
     letter-spacing: -0.02em;
@@ -93,10 +93,10 @@ const styles = `
 
   .lms-hero p {
     font-size: 1.05rem;
-    color: rgba(255,255,255,0.78);
+    color: rgba(0,0,0,0.65);
     line-height: 1.7;
     max-width: 400px;
-    font-weight: 300;
+    font-weight: 400;
   }
 
   .lms-hero-stats {
@@ -108,24 +108,30 @@ const styles = `
   .lms-stat-num {
     font-size: 1.8rem;
     font-weight: 700;
-    color: #ffffff;
+    color: #000000;
   }
   .lms-stat-label {
     font-size: 0.78rem;
-    color: rgba(255,255,255,0.6);
-    font-weight: 400;
+    color: rgba(0,0,0,0.55);
+    font-weight: 500;
   }
 
   /* ── Right panel ── */
   .lms-right {
     width: 480px;
     min-width: 380px;
-    background: #ffffff;
+    background: #000000;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 48px 48px;
-    box-shadow: -8px 0 40px rgba(0,0,0,0.08);
+    box-shadow: -8px 0 40px rgba(0,0,0,0.25);
+  }
+
+  /* Mobile-only elements — hidden on desktop */
+  .lms-mobile-hero { display: none; }
+  .lms-mobile-card-wrap {
+    display: contents; /* transparent passthrough on desktop */
   }
 
   .lms-card {
@@ -138,13 +144,13 @@ const styles = `
   .lms-card-header h2 {
     font-size: 1.6rem;
     font-weight: 700;
-    color: #1a1a2e;
+    color: #ffffff;
     margin-bottom: 6px;
   }
 
   .lms-card-header p {
     font-size: 0.88rem;
-    color: #6b7280;
+    color: rgba(255,255,255,0.55);
     font-weight: 400;
   }
 
@@ -156,7 +162,7 @@ const styles = `
   .lms-field label {
     font-size: 0.82rem;
     font-weight: 600;
-    color: #374151;
+    color: rgba(255,255,255,0.85);
     letter-spacing: 0.02em;
   }
 
@@ -164,24 +170,24 @@ const styles = `
   .lms-field select {
     width: 100%;
     padding: 12px 16px;
-    border: 1.5px solid #e5e7eb;
+    border: 1.5px solid rgba(255,255,255,0.12);
     border-radius: 10px;
     font-size: 0.92rem;
     font-family: 'Inter', sans-serif;
-    color: #111827;
-    background: #f9fafb;
+    color: #ffffff;
+    background: rgba(255,255,255,0.07);
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
   }
 
   .lms-field input:focus,
   .lms-field select:focus {
-    border-color: #1a73e8;
-    background: #ffffff;
-    box-shadow: 0 0 0 3px rgba(26,115,232,0.12);
+    border-color: #facc15;
+    background: rgba(250,204,21,0.07);
+    box-shadow: 0 0 0 3px rgba(250,204,21,0.18);
   }
 
-  .lms-field input::placeholder { color: #9ca3af; }
+  .lms-field input::placeholder { color: rgba(255,255,255,0.35); }
 
   /* Password wrapper */
   .lms-pw-wrap { position: relative; }
@@ -194,11 +200,11 @@ const styles = `
     background: none;
     border: none;
     cursor: pointer;
-    color: #9ca3af;
+    color: rgba(255,255,255,0.4);
     font-size: 1rem;
     transition: color 0.2s;
   }
-  .lms-pw-toggle:hover { color: #1a73e8; }
+  .lms-pw-toggle:hover { color: #facc15; }
 
   /* Error */
   .lms-error {
@@ -217,32 +223,32 @@ const styles = `
   .lms-btn-primary {
     width: 100%;
     padding: 13px;
-    background: linear-gradient(135deg, #1a73e8, #1557b0);
-    color: #ffffff;
+    background: #facc15;
+    color: #000000;
     border: none;
     border-radius: 10px;
     font-size: 0.95rem;
-    font-weight: 600;
+    font-weight: 700;
     font-family: 'Inter', sans-serif;
     cursor: pointer;
     transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
-    box-shadow: 0 4px 14px rgba(26,115,232,0.35);
+    box-shadow: 0 4px 14px rgba(250,204,21,0.35);
     letter-spacing: 0.01em;
   }
   .lms-btn-primary:hover:not(:disabled) {
     opacity: 0.92;
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(26,115,232,0.4);
+    box-shadow: 0 6px 20px rgba(250,204,21,0.5);
   }
   .lms-btn-primary:active:not(:disabled) { transform: translateY(0); }
-  .lms-btn-primary:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+  .lms-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
   /* Spinner */
   .lms-spinner {
     display: inline-block;
     width: 16px; height: 16px;
-    border: 2px solid rgba(255,255,255,0.4);
-    border-top-color: #fff;
+    border: 2px solid rgba(0,0,0,0.25);
+    border-top-color: #000;
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
     margin-right: 8px;
@@ -258,22 +264,22 @@ const styles = `
   .lms-role-pill {
     flex: 1;
     padding: 8px 4px;
-    border: 1.5px solid #e5e7eb;
+    border: 1.5px solid rgba(255,255,255,0.15);
     border-radius: 8px;
-    background: #f9fafb;
+    background: rgba(255,255,255,0.06);
     font-size: 0.8rem;
     font-weight: 500;
-    color: #6b7280;
+    color: rgba(255,255,255,0.55);
     cursor: pointer;
     text-align: center;
     transition: all 0.18s;
     font-family: 'Inter', sans-serif;
   }
-  .lms-role-pill:hover { border-color: #1a73e8; color: #1a73e8; }
+  .lms-role-pill:hover { border-color: #facc15; color: #facc15; }
   .lms-role-pill.active {
-    border-color: #1a73e8;
-    background: #eff6ff;
-    color: #1a73e8;
+    border-color: #facc15;
+    background: rgba(250,204,21,0.12);
+    color: #facc15;
     font-weight: 600;
   }
 
@@ -281,20 +287,124 @@ const styles = `
   .lms-footer-link {
     text-align: center;
     font-size: 0.82rem;
-    color: #6b7280;
+    color: rgba(255,255,255,0.45);
     margin-top: 4px;
   }
   .lms-footer-link a {
-    color: #1a73e8;
+    color: #facc15;
     font-weight: 600;
     text-decoration: none;
   }
   .lms-footer-link a:hover { text-decoration: underline; }
 
-  /* Responsive */
+  /* ── Responsive: Mobile ── */
   @media (max-width: 768px) {
+    .lms-login-root {
+      flex-direction: column;
+      min-height: 100dvh;
+      background: #000000;
+    }
+
+    /* Hide the big desktop hero */
     .lms-hero { display: none; }
-    .lms-right { width: 100%; min-width: 0; padding: 32px 24px; }
+
+    /* Compact branded top bar */
+    .lms-right {
+      width: 100%;
+      min-width: 0;
+      min-height: 100dvh;
+      padding: 0;
+      box-shadow: none;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+    }
+
+    /* Inject a mini hero at the top via pseudo if needed — 
+       we handle it in the JSX with lms-mobile-hero */
+    .lms-mobile-hero {
+      background: linear-gradient(135deg, #facc15 0%, #f59e0b 100%);
+      padding: 36px 24px 48px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .lms-mobile-hero::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0; right: 0;
+      height: 36px;
+      background: #000000;
+      border-radius: 32px 32px 0 0;
+    }
+
+    .lms-mobile-hero img {
+      height: 52px;
+      width: auto;
+      object-fit: contain;
+      filter: brightness(0); /* make logo black on yellow */
+    }
+
+    .lms-mobile-hero-title {
+      color: #000000;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    .lms-mobile-hero-sub {
+      color: rgba(0,0,0,0.6);
+      font-size: 0.8rem;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    /* Card panel */
+    .lms-mobile-card-wrap {
+      flex: 1;
+      padding: 8px 20px 32px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .lms-card {
+      background: transparent;
+      border-radius: 20px;
+      box-shadow: none;
+      padding: 28px 24px;
+      max-width: 100%;
+      width: 100%;
+    }
+
+    .lms-card-header { margin-bottom: 24px; }
+    .lms-card-header h2 { font-size: 1.35rem; }
+
+    /* Bigger touch targets */
+    .lms-field input,
+    .lms-field select {
+      padding: 14px 16px;
+      font-size: 1rem;
+      border-radius: 12px;
+    }
+
+    .lms-btn-primary {
+      padding: 15px;
+      font-size: 1rem;
+      border-radius: 12px;
+    }
+
+    .lms-role-pill { padding: 10px 4px; font-size: 0.85rem; }
+
+    .lms-footer-link { font-size: 0.88rem; }
   }
 `;
 
@@ -335,11 +445,7 @@ const Login = () => {
         {/* ── Left hero ── */}
         <div className="lms-hero">
           {/* Floating doodles */}
-          <div className="lms-doodle">☁️</div>
-          <div className="lms-doodle">📚</div>
-          <div className="lms-doodle">🎓</div>
-          <div className="lms-doodle">💡</div>
-          <div className="lms-doodle">✏️</div>
+          
 
           {/* Wave SVG */}
           <svg className="lms-hero-waves" viewBox="0 0 1440 220" preserveAspectRatio="none" fill="none">
@@ -352,81 +458,78 @@ const Login = () => {
               <span></span>
               Learning Management System
             </div>
-            <h1>Welcome to the<br />Developer Cloud LMS</h1>
-            <p>
-              We make it simple to launch your learning journey in the cloud
-              and scale as you grow — whether you're a student, trainer, or admin.
-            </p>
-            <div className="lms-hero-stats">
-
-              <div className="lms-stat-item">
-                <span className="lms-stat-num">500+</span>
-                <span className="lms-stat-label">Courses</span>
-              </div>
-
-            </div>
+            <h1>Welcome to the<br />Cloud LMS</h1>
+           
           </div>
         </div>
 
         {/* ── Right login card ── */}
         <div className="lms-right">
-          <div className="lms-card">
-            <div className="lms-card-header">
-              <h2>Sign in to your account</h2>
-              <p>Enter your credentials to access the platform</p>
-            </div>
+          {/* Mobile-only branded top bar */}
+          <div className="lms-mobile-hero">
+            <img src="/logo.png" alt="LMS Cloud" />
+            <p className="lms-mobile-hero-title">Cloud LMS</p>
+            <p className="lms-mobile-hero-sub">Sign in to continue learning</p>
+          </div>
 
-            <form className="lms-form" onSubmit={handleSubmit} noValidate>
-              {error && (
-                <div className="lms-error">
-                  <span>⚠️</span> {error}
-                </div>
-              )}
-
-              <div className="lms-field">
-                <label htmlFor="lms-email">Email Address</label>
-                <input
-                  id="lms-email"
-                  type="email"
-                  name="email"
-                  placeholder="you@example.com"
-                  value={form.email}
-                  onChange={handleChange}
-                  autoComplete="email"
-                />
+          {/* Card wrapper (provides padding on mobile) */}
+          <div className="lms-mobile-card-wrap">
+            <div className="lms-card">
+              <div className="lms-card-header">
+                <h2>Sign in to your account</h2>
+                <p>Enter your credentials to access the platform</p>
               </div>
 
-              <div className="lms-field">
-                <label htmlFor="lms-password">Password</label>
-                <div className="lms-pw-wrap">
+              <form className="lms-form" onSubmit={handleSubmit} noValidate>
+                {error && (
+                  <div className="lms-error">
+                    <span>⚠️</span> {error}
+                  </div>
+                )}
+
+                <div className="lms-field">
+                  <label htmlFor="lms-email">Email Address</label>
                   <input
-                    id="lms-password"
-                    type={showPw ? 'text' : 'password'}
-                    name="password"
-                    placeholder="••••••••"
-                    value={form.password}
+                    id="lms-email"
+                    type="email"
+                    name="email"
+                    placeholder="you@example.com"
+                    value={form.email}
                     onChange={handleChange}
-                    autoComplete="current-password"
+                    autoComplete="email"
                   />
-                  <button
-                    type="button"
-                    className="lms-pw-toggle"
-                    onClick={() => setShowPw((v) => !v)}
-                    aria-label="Toggle password visibility"
-                  >
-                    {showPw ? '🙈' : '👁️'}
-                  </button>
                 </div>
-              </div>
 
-              <button type="submit" className="lms-btn-primary" disabled={loading}>
-                {loading && <span className="lms-spinner" />}
-                {loading ? 'Signing in…' : 'Sign In'}
-              </button>
-            </form>
+                <div className="lms-field">
+                  <label htmlFor="lms-password">Password</label>
+                  <div className="lms-pw-wrap">
+                    <input
+                      id="lms-password"
+                      type={showPw ? 'text' : 'password'}
+                      name="password"
+                      placeholder="••••••••"
+                      value={form.password}
+                      onChange={handleChange}
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      className="lms-pw-toggle"
+                      onClick={() => setShowPw((v) => !v)}
+                      aria-label="Toggle password visibility"
+                    >
+                      {showPw ? '🙈' : '👁️'}
+                    </button>
+                  </div>
+                </div>
 
-            <div className="lms-footer-link" style={{ marginTop: '20px' }}>
-              Don&apos;t have an account? <a href="/register">Register here</a>
+                <button type="submit" className="lms-btn-primary" disabled={loading}>
+                  {loading && <span className="lms-spinner" />}
+                  {loading ? 'Signing in…' : 'Sign In'}
+                </button>
+              </form>
+
+              
             </div>
           </div>
         </div>

@@ -9,10 +9,12 @@ const styles = `
 
   .lms-dash-wrapper {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
+    height: 100dvh;
     font-family: 'Inter', sans-serif;
     background: #ffffff;
     color: #000000;
+    overflow: hidden;
   }
 
   /* ── Sidebar ── */
@@ -94,6 +96,7 @@ const styles = `
     display: flex;
     flex-direction: column;
     min-width: 0;
+    overflow: hidden;
   }
 
   .lms-header {
@@ -146,7 +149,9 @@ const styles = `
     flex: 1;
     padding: 24px;
     overflow-y: auto;
+    overflow-x: hidden;
     background: #f8fafc;
+    min-height: 0;
   }
 
   /* ── Mobile Overrides ── */
@@ -156,16 +161,40 @@ const styles = `
       left: 0; top: 0; bottom: 0;
       transform: translateX(-100%);
       width: 280px !important;
+      height: 100dvh;
+      overflow-y: auto;
+      z-index: 200;
     }
     .lms-sidebar.mobile-open { transform: translateX(0); }
     .lms-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 95; backdrop-filter: blur(2px);
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 150; backdrop-filter: blur(2px);
     }
     .lms-toggle-btn { display: flex; }
-    .lms-sidebar.collapsed { width: 0; border: none; }
-    .lms-content { padding: 20px; }
-  }
+    .lms-sidebar.collapsed { transform: translateX(-100%); }
 
+    /* Header: prevent overflow on mobile */
+    .lms-header {
+      height: auto;
+      min-height: 60px;
+      padding: 10px 14px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .lms-header-left {
+      gap: 10px;
+    }
+    .lms-page-title {
+      font-size: 1rem;
+    }
+    /* Hide Change Password button text on mobile to prevent overflow */
+    .lms-header-right .lms-btn-outline {
+      display: none;
+    }
+    .lms-user-text {
+      display: none;
+    }
+    .lms-content { padding: 16px 12px; }
+  }
 
   @media (min-width: 769px) {
     .lms-overlay { display: none; }
@@ -283,8 +312,16 @@ const DashboardLayout = ({ children, title }) => {
           <div className="lms-sidebar-footer">
             <button
               className="lms-nav-item"
-              onClick={logout}
+              onClick={() => setIsCPModalOpen(true)}
               style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              <span className="lms-nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+              {!isCollapsed && <span>Change Password</span>}
+            </button>
+            <button
+              className="lms-nav-item"
+              onClick={logout}
+              style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}
             >
               <span className="lms-nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span>
               {!isCollapsed && <span>Logout</span>}
