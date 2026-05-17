@@ -263,6 +263,30 @@ const DashboardLayout = ({ children, title }) => {
     setIsMobileOpen(false);
   }, [location.pathname]);
 
+  // Lock body and content scroll when mobile sidebar is open
+  useEffect(() => {
+    if (isMobileOpen) {
+      document.body.style.overflow = 'hidden';
+      const contentElement = document.querySelector('.lms-content');
+      if (contentElement) {
+        contentElement.style.overflow = 'hidden';
+      }
+    } else {
+      document.body.style.overflow = '';
+      const contentElement = document.querySelector('.lms-content');
+      if (contentElement) {
+        contentElement.style.overflow = '';
+      }
+    }
+    return () => {
+      document.body.style.overflow = '';
+      const contentElement = document.querySelector('.lms-content');
+      if (contentElement) {
+        contentElement.style.overflow = '';
+      }
+    };
+  }, [isMobileOpen]);
+
   const navItems = {
     admin: [
       { path: '/admin', label: 'Dashboard', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> },
@@ -289,7 +313,13 @@ const DashboardLayout = ({ children, title }) => {
     <>
       <style>{styles}</style>
       <div className="lms-dash-wrapper">
-        {isMobileOpen && <div className="lms-overlay" onClick={() => setIsMobileOpen(false)} />}
+        {isMobileOpen && (
+          <div 
+            className="lms-overlay" 
+            onClick={() => setIsMobileOpen(false)} 
+            onTouchMove={(e) => e.preventDefault()}
+          />
+        )}
 
         <aside className={`lms-sidebar ${isCollapsed ? 'collapsed' : 'open'} ${isMobileOpen ? 'mobile-open' : ''}`}>
           <div className="lms-sidebar-header">
