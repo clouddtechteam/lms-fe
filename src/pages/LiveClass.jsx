@@ -69,6 +69,25 @@ const styles = `
     transform: translateY(-2px);
     box-shadow: 0 10px 15px -3px rgba(26,115,232,0.4);
   }
+
+  .join-app-btn {
+    padding: 14px 40px;
+    background: #2d8cff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+    box-shadow: 0 4px 6px -1px rgba(45,140,255,0.3);
+  }
+
+  .join-app-btn:hover {
+    background: #1a73e8;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(45,140,255,0.4);
+  }
 `;
 
 const LiveClass = () => {
@@ -99,6 +118,20 @@ const LiveClass = () => {
 
   const handleStartClass = () => {
     setShowZoom(true);
+  };
+
+  const isTrainer = user?.role === 'trainer' || user?.role === 'admin';
+
+  const handleOpenInApp = () => {
+    if (!meet) return;
+    const meetingNumber = meet.meetingNumber.replace(/\s/g, '');
+    const password = meet.password;
+    
+    // Zoom's official join-meeting web-to-app gateway
+    const zoomUrl = `https://zoom.us/j/${meetingNumber}?pwd=${password}`;
+    
+    // Open in a new window/tab to reliably launch the native Zoom application
+    window.open(zoomUrl, '_blank');
   };
 
   /* FULLSCREEN ZOOM MODE */
@@ -226,12 +259,31 @@ const LiveClass = () => {
             Click below to join the live classroom.
           </p>
 
-          <button
-            className="join-now-btn"
-            onClick={handleStartClass}
-          >
-            Enter Live Classroom
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <button
+                className="join-now-btn"
+                onClick={handleStartClass}
+              >
+                Enter Live Classroom
+              </button>
+
+              {isTrainer && (
+                <button
+                  className="join-app-btn"
+                  onClick={handleOpenInApp}
+                >
+                  Open in Zoom App
+                </button>
+              )}
+            </div>
+
+            {isTrainer && (
+              <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '8px 0 0 0', maxWidth: '500px', textAlign: 'center', lineHeight: '1.4' }}>
+                💡 <strong>Host Tip:</strong> To start as Host in the native app, make sure you are logged into the host Zoom account on your device, or click <em>Claim Host</em> inside Zoom using your 6-digit Host Key.
+              </p>
+            )}
+          </div>
 
         </div>
       </div>
