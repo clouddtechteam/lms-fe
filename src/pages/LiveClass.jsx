@@ -126,10 +126,10 @@ const LiveClass = () => {
     if (!meet) return;
     const meetingNumber = meet.meetingNumber.replace(/\s/g, '');
     const password = meet.password;
-    
+
     // Zoom's official join-meeting web-to-app gateway
     const zoomUrl = `https://zoom.us/j/${meetingNumber}?pwd=${password}`;
-    
+
     // Open in a new window/tab to reliably launch the native Zoom application
     window.open(zoomUrl, '_blank');
   };
@@ -148,11 +148,11 @@ const LiveClass = () => {
         }}
       >
         <ZoomMeet
-  meet={meet}
-  role={user?.role}
-  userName={user?.name}
-  onError={() => setShowZoom(false)}
-/>
+          meet={meet}
+          role={user?.role}
+          userName={user?.name}
+          onError={() => setShowZoom(false)}
+        />
       </div>
     );
   }
@@ -278,14 +278,7 @@ const LiveClass = () => {
               )}
             </div>
 
-            {isTrainer && (
-              <p style={{ fontSize: '0.85rem', color: '#38bdf8', margin: '12px 0 0 0', maxWidth: '550px', textAlign: 'center', lineHeight: '1.5', background: 'rgba(56, 189, 248, 0.07)', padding: '12px 16px', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-                ℹ️ <strong>Trainer Note:</strong> The browser-based classroom (Web SDK) automatically signs you in as Host using our LMS secure key. 
-                <br /><br />
-                However, for the <strong>native Zoom App</strong>, Zoom's security requires you to be logged into your academy's Zoom host account on your device. Otherwise, it will say "Waiting for host". 
-                To start, simply sign into the host account once on your Zoom desktop app!
-              </p>
-            )}
+
           </div>
 
         </div>

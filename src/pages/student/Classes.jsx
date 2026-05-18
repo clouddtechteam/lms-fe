@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 const styles = `
   .classes-grid { 
     display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); 
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr)); 
     gap: 32px; 
   }
   .class-card { 
@@ -38,6 +38,20 @@ const styles = `
     box-shadow: 0 4px 6px rgba(26, 115, 232, 0.2);
   }
   .join-btn:hover { background: #1557b0; transform: scale(1.02); }
+
+  @media (max-width: 640px) {
+    .classes-grid {
+      gap: 16px;
+    }
+    .class-card {
+      padding: 20px;
+      border-radius: 16px;
+    }
+    .meet-item {
+      padding: 16px;
+      border-radius: 12px;
+    }
+  }
 `;
 
 const parseBatchTime = (timeStr) => {
