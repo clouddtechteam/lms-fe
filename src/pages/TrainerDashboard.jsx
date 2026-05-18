@@ -4,13 +4,111 @@ import DashboardLayout from '../layouts/DashboardLayout.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { getTrainerLiveClasses } from '../api/meet.js';
 
-// Parse "HH:MM" batch time string into today's Date object
-const parseBatchTime = (timeStr) => {
-  if (!timeStr) return null;
-  const [h, m] = timeStr.split(':').map(Number);
-  const d = new Date();
-  d.setHours(h, m, 0, 0);
-  return d;
+// Helper to check if a meet is scheduled on a given day of the week
+const isScheduledOn = (meet, dayOfWeek, batchOverride = null) => {
+  const b = batchOverride || meet?.batch || {};
+  return !b.weekdays || b.weekdays.length === 0 || b.weekdays.includes(dayOfWeek);
+};
+
+// Gets start and end times for a meet on a specific reference date
+const getMeetTimes = (meet, referenceDate = new Date(), batchOverride = null) => {
+  const b = batchOverride || meet?.batch || {};
+  if (!b.startTime || !b.endTime) return null;
+
+  const [sh, sm] = b.startTime.split(':').map(Number);
+  const [eh, em] = b.endTime.split(':').map(Number);
+
+  const start = new Date(referenceDate);
+  start.setHours(sh, sm, 0, 0);
+
+  const end = new Date(referenceDate);
+  end.setHours(eh, em, 0, 0);
+
+  if (end < start) {
+    end.setDate(end.getDate() + 1);
+  }
+
+  return { start, end };
+};
+
+// Helper to determine the comprehensive status of a meet relative to now
+const getMeetStatusInfo = (meet, now = new Date(), batchOverride = null) => {
+  if (meet.status === 'live') {
+    return { status: 'live', isPast: false, canJoin: true, relevance: 0, meet };
+  }
+  if (meet.status === 'ended') {
+    return { status: 'ended', isPast: true, canJoin: false, relevance: 4, meet };
+  }
+
+  // Get potential active instances (yesterday, today, tomorrow)
+  const instances = [];
+  
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (isScheduledOn(meet, yesterday.getDay(), batchOverride)) {
+    const times = getMeetTimes(meet, yesterday, batchOverride);
+    if (times) instances.push({ ...times, type: 'yesterday' });
+  }
+
+  if (isScheduledOn(meet, now.getDay(), batchOverride)) {
+    const times = getMeetTimes(meet, now, batchOverride);
+    if (times) instances.push({ ...times, type: 'today' });
+  }
+
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (isScheduledOn(meet, tomorrow.getDay(), batchOverride)) {
+    const times = getMeetTimes(meet, tomorrow, batchOverride);
+    if (times) instances.push({ ...times, type: 'tomorrow' });
+  }
+
+  // 1. Is there an instance currently in progress?
+  const inProgress = instances.find(inst => now >= inst.start && now <= inst.end);
+  if (inProgress) {
+    return { status: 'scheduled', isPast: false, canJoin: true, relevance: 1, startTime: inProgress.start, endTime: inProgress.end };
+  }
+
+  // 2. Is there an instance in the join window?
+  const inJoinWindow = instances.find(inst => {
+    const windowStart = new Date(inst.start.getTime() - 15 * 60000);
+    const windowEnd = new Date(inst.end.getTime() + 15 * 60000);
+    return now >= windowStart && now <= windowEnd;
+  });
+  if (inJoinWindow) {
+    return { status: 'scheduled', isPast: false, canJoin: true, relevance: 2, startTime: inJoinWindow.start, endTime: inJoinWindow.end };
+  }
+
+  // 3. Is there an upcoming instance?
+  let upcoming = null;
+  let minUpcomingDelta = Infinity;
+  for (const inst of instances) {
+    const delta = inst.start - now;
+    if (delta > 0 && delta < minUpcomingDelta) {
+      minUpcomingDelta = delta;
+      upcoming = inst;
+    }
+  }
+  if (upcoming) {
+    return { status: 'scheduled', isPast: false, canJoin: false, relevance: 3, startTime: upcoming.start, endTime: upcoming.end };
+  }
+
+  // 4. Fallback: most recently ended instance
+  let past = null;
+  let maxPastTime = -Infinity;
+  for (const inst of instances) {
+    if (inst.end < now) {
+      if (inst.end.getTime() > maxPastTime) {
+        maxPastTime = inst.end.getTime();
+        past = inst;
+      }
+    }
+  }
+  if (past) {
+    const bufferEnd = new Date(past.end.getTime() + 15 * 60000);
+    return { status: 'scheduled', isPast: now > bufferEnd, canJoin: false, relevance: 4, startTime: past.start, endTime: past.end };
+  }
+
+  return { status: 'scheduled', isPast: true, canJoin: false, relevance: 5 };
 };
 
 // Find the single meet most relevant to current time
@@ -18,88 +116,40 @@ const parseBatchTime = (timeStr) => {
 const findClosestMeet = (meets) => {
   if (!meets || !meets.length) return null;
   const now = new Date();
-  const today = now.getDay();
+  
+  let bestMeet = null;
+  let bestInfo = null;
 
-  // 1. Filter for classes that match today's weekday (or have no weekdays set)
-  const todaysMeets = meets.filter(m => {
-    const b = m.batch || {};
-    return !b.weekdays || b.weekdays.length === 0 || b.weekdays.includes(today);
-  });
-
-  if (todaysMeets.length === 0) return null;
-
-  // 2. Explicitly marked live
-  const liveClass = todaysMeets.find(m => m.status === 'live');
-  if (liveClass) return liveClass;
-
-  // 3. Currently within the time window
-  const inWindow = todaysMeets.find(m => {
-    if (m.status === 'ended') return false;
-    const start = parseBatchTime(m.batch?.startTime);
-    const end = parseBatchTime(m.batch?.endTime);
-    return start && end && now >= start && now <= end;
-  });
-  if (inWindow) return inWindow;
-
-  // 4. Next upcoming for today
-  let nextUpcoming = null;
-  let smallestFutureDelta = Infinity;
-  for (const meet of todaysMeets) {
-    if (meet.status === 'ended') continue;
-    const start = parseBatchTime(meet.batch?.startTime);
-    if (!start) continue;
-    const delta = start - now;
-    if (delta > 0 && delta < smallestFutureDelta) {
-      smallestFutureDelta = delta;
-      nextUpcoming = meet;
+  for (const meet of meets) {
+    const info = getMeetStatusInfo(meet, now);
+    if (!bestInfo || info.relevance < bestInfo.relevance) {
+      bestInfo = info;
+      bestMeet = meet;
+    } else if (info.relevance === bestInfo.relevance) {
+      if (info.relevance === 3) {
+        if (info.startTime < bestInfo.startTime) {
+          bestInfo = info;
+          bestMeet = meet;
+        }
+      } else if (info.relevance === 4) {
+        if (info.endTime > bestInfo.endTime) {
+          bestInfo = info;
+          bestMeet = meet;
+        }
+      }
     }
   }
-  if (nextUpcoming) return nextUpcoming;
-
-  // 5. Fallback: most recently ended class today
-  let latestPast = null;
-  let latestTime = -Infinity;
-  for (const meet of todaysMeets) {
-    const end = parseBatchTime(meet.batch?.endTime);
-    if (end && end.getTime() > latestTime) { latestTime = end.getTime(); latestPast = meet; }
-  }
-  return latestPast;
+  return bestMeet;
 };
 
 // Returns true if the session is currently joinable
 // Rule: live OR (now >= start - 15m AND now <= end + 15m)
 const canJoinSession = (meet) => {
-  if (meet.status === 'live') return true;
-  if (meet.status === 'ended') return false;
-  
-  const now = new Date();
-  const b = meet.batch || {};
-
-  // 1. Weekday Check
-  const today = now.getDay();
-  if (b.weekdays && b.weekdays.length > 0 && !b.weekdays.includes(today)) {
-    return false;
-  }
-
-  // 2. Time Window Check
-  const start = parseBatchTime(b.startTime);
-  const end = parseBatchTime(b.endTime);
-  
-  if (!start || !end) return false;
-
-  const joinWindowStart = new Date(start.getTime() - 15 * 60000);
-  const joinWindowEnd = new Date(end.getTime() + 15 * 60000);
-
-  return now >= joinWindowStart && now <= joinWindowEnd;
+  return getMeetStatusInfo(meet).canJoin;
 };
 
 const isClassPast = (meet) => {
-  if (meet.status === 'live') return false;
-  if (meet.status === 'ended') return true;
-  const end = parseBatchTime(meet.batch?.endTime);
-  if (!end) return true;
-  const bufferEnd = new Date(end.getTime() + 15 * 60000);
-  return new Date() > bufferEnd;
+  return getMeetStatusInfo(meet).isPast;
 };
 
 const styles = `
