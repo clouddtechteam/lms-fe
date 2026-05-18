@@ -279,8 +279,11 @@ const LiveClass = () => {
             </div>
 
             {isTrainer && (
-              <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '8px 0 0 0', maxWidth: '500px', textAlign: 'center', lineHeight: '1.4' }}>
-                💡 <strong>Host Tip:</strong> To start as Host in the native app, make sure you are logged into the host Zoom account on your device, or click <em>Claim Host</em> inside Zoom using your 6-digit Host Key.
+              <p style={{ fontSize: '0.85rem', color: '#38bdf8', margin: '12px 0 0 0', maxWidth: '550px', textAlign: 'center', lineHeight: '1.5', background: 'rgba(56, 189, 248, 0.07)', padding: '12px 16px', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                ℹ️ <strong>Trainer Note:</strong> The browser-based classroom (Web SDK) automatically signs you in as Host using our LMS secure key. 
+                <br /><br />
+                However, for the <strong>native Zoom App</strong>, Zoom's security requires you to be logged into your academy's Zoom host account on your device. Otherwise, it will say "Waiting for host". 
+                To start, simply sign into the host account once on your Zoom desktop app!
               </p>
             )}
           </div>
