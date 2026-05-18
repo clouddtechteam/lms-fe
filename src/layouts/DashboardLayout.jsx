@@ -314,9 +314,9 @@ const DashboardLayout = ({ children, title }) => {
       <style>{styles}</style>
       <div className="lms-dash-wrapper">
         {isMobileOpen && (
-          <div 
-            className="lms-overlay" 
-            onClick={() => setIsMobileOpen(false)} 
+          <div
+            className="lms-overlay"
+            onClick={() => setIsMobileOpen(false)}
             onTouchMove={(e) => e.preventDefault()}
           />
         )}
@@ -372,8 +372,8 @@ const DashboardLayout = ({ children, title }) => {
             </div>
 
             <div className="lms-header-right">
-              <button 
-                className="lms-btn lms-btn-outline" 
+              <button
+                className="lms-btn lms-btn-outline"
                 style={{ padding: '8px 16px', fontSize: '0.85rem' }}
                 onClick={() => setIsCPModalOpen(true)}
               >
