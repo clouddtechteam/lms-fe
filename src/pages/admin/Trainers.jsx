@@ -10,6 +10,7 @@ const Trainers = () => {
   const [batches, setBatches] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
   const [importFile, setImportFile] = useState(null);
   const [selectedTrainer, setSelectedTrainer] = useState(null);
   const [editData, setEditData] = useState(null);
@@ -17,8 +18,17 @@ const Trainers = () => {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', batchIds: [] });
 
   useEffect(() => {
-    fetchTrainers();
-    fetchBatches();
+    const init = async () => {
+      try {
+        setFetchLoading(true);
+        await Promise.all([fetchTrainers(), fetchBatches()]);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setFetchLoading(false);
+      }
+    };
+    init();
   }, []);
 
   const fetchBatches = async () => {
@@ -81,70 +91,79 @@ const Trainers = () => {
       </div>
 
       <div className="lms-page-container">
-        <div className="lms-table-section">
-          <table className="lms-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Phone</th>
-                <th>Assigned Batches</th>
-              </tr>
-            </thead>
-            <tbody>
-              {trainers.map((t) => (
-                <tr key={t._id} className={selectedTrainer?._id === t._id ? 'selected' : ''} onClick={() => handleRowClick(t)}>
-                  <td>
-                    <div style={{ fontWeight: 600 }}>{t.firstName} {t.lastName !== '.' ? t.lastName : ''}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{t.email}</div>
-                  </td>
-                  <td>{t.phone}</td>
-                  <td>
-                    {t.batchIds?.map(b => (
-                      <div key={b._id} style={{ marginBottom: '4px' }}>
-                        <div style={{ color: '#2563eb', fontWeight: 700, fontSize: '0.8rem' }}>{b.name}</div>
-                        <div style={{ color: '#64748b', fontSize: '0.7rem' }}>{b.startTime} - {b.endTime}</div>
-                      </div>
-                    ))}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {fetchLoading ? (
+          <div className="lms-loading-container">
+            <div className="lms-spinner-large" />
+            <div style={{ marginTop: '12px' }}>Loading trainers...</div>
+          </div>
+        ) : (
+          <>
+            <div className="lms-table-section">
+              <table className="lms-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Assigned Batches</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {trainers.map((t) => (
+                    <tr key={t._id} className={selectedTrainer?._id === t._id ? 'selected' : ''} onClick={() => handleRowClick(t)}>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{t.firstName} {t.lastName !== '.' ? t.lastName : ''}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{t.email}</div>
+                      </td>
+                      <td>{t.phone}</td>
+                      <td>
+                        {t.batchIds?.map(b => (
+                          <div key={b._id} style={{ marginBottom: '4px' }}>
+                            <div style={{ color: '#2563eb', fontWeight: 700, fontSize: '0.8rem' }}>{b.name}</div>
+                            <div style={{ color: '#64748b', fontSize: '0.7rem' }}>{b.startTime} - {b.endTime}</div>
+                          </div>
+                        ))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-        <div className={`lms-details-panel ${selectedTrainer ? 'open' : ''}`}>
-          {selectedTrainer && editData && (
-            <>
-              <div className="panel-title">
-                {editData.firstName}
-                <button className="lms-btn" onClick={() => setSelectedTrainer(null)}>&times;</button>
-              </div>
+            <div className={`lms-details-panel ${selectedTrainer ? 'open' : ''}`}>
+              {selectedTrainer && editData && (
+                <>
+                  <div className="panel-title">
+                    {editData.firstName}
+                    <button className="lms-btn" onClick={() => setSelectedTrainer(null)}>&times;</button>
+                  </div>
 
-              <div style={{ marginBottom: '24px' }}>
-                <span className="panel-label">Profile</span>
-                <input className="lms-input" value={editData.firstName} onChange={e => setEditData({...editData, firstName: e.target.value})} placeholder="First Name" />
-                <input className="lms-input" value={editData.lastName} onChange={e => setEditData({...editData, lastName: e.target.value})} placeholder="Last Name" />
-                <input className="lms-input" value={editData.phone} onChange={e => setEditData({...editData, phone: e.target.value})} placeholder="Phone" />
-              </div>
+                  <div style={{ marginBottom: '24px' }}>
+                    <span className="panel-label">Profile</span>
+                    <input className="lms-input" value={editData.firstName} onChange={e => setEditData({...editData, firstName: e.target.value})} placeholder="First Name" />
+                    <input className="lms-input" value={editData.lastName} onChange={e => setEditData({...editData, lastName: e.target.value})} placeholder="Last Name" />
+                    <input className="lms-input" value={editData.phone} onChange={e => setEditData({...editData, phone: e.target.value})} placeholder="Phone" />
+                  </div>
 
-              <div style={{ marginBottom: '24px' }}>
-                <span className="panel-label">Assigned Batches</span>
-                <div className="lms-chip-container">
-                  {batches.map(b => {
-                    const id = b.batchId || b.name;
-                    const active = editData.batchIds.includes(id);
-                    return ( <div key={b._id} className={`lms-chip ${active ? 'active' : ''}`} onClick={() => { const n = active ? editData.batchIds.filter(x => x !== id) : [...editData.batchIds, id]; setEditData({...editData, batchIds: n}); }}>{b.name} ({b.startTime})</div> );
-                  })}
-                </div>
-              </div>
+                  <div style={{ marginBottom: '24px' }}>
+                    <span className="panel-label">Assigned Batches</span>
+                    <div className="lms-chip-container">
+                      {batches.map(b => {
+                        const id = b.batchId || b.name;
+                        const active = editData.batchIds.includes(id);
+                        return ( <div key={b._id} className={`lms-chip ${active ? 'active' : ''}`} onClick={() => { const n = active ? editData.batchIds.filter(x => x !== id) : [...editData.batchIds, id]; setEditData({...editData, batchIds: n}); }}>{b.name} ({b.startTime})</div> );
+                      })}
+                    </div>
+                  </div>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button className="lms-btn lms-btn-primary" style={{ flex: 1 }} onClick={handleUpdate} disabled={loading}>Save</button>
-                <button className="lms-btn lms-btn-danger" onClick={() => handleDelete(selectedTrainer._id)}>Delete</button>
-              </div>
-            </>
-          )}
-        </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button className="lms-btn lms-btn-primary" style={{ flex: 1 }} onClick={handleUpdate} disabled={loading}>Save</button>
+                    <button className="lms-btn lms-btn-danger" onClick={() => handleDelete(selectedTrainer._id)}>Delete</button>
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {showModal && (
@@ -173,6 +192,13 @@ const Trainers = () => {
       )}
 
       {importFile && <ExcelImportModal file={importFile} onConfirm={async d => { setLoading(true); await importTrainers(d); setLoading(false); setImportFile(null); fetchTrainers(); }} onCancel={() => setImportFile(null)} />}
+
+      {loading && (
+        <div className="lms-overlay-loader">
+          <div className="lms-spinner-large" />
+          <div>Processing action... Please wait</div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

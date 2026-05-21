@@ -10,6 +10,7 @@ const Students = () => {
   const [batches, setBatches] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
   const [importFile, setImportFile] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [editData, setEditData] = useState(null);
@@ -21,8 +22,17 @@ const Students = () => {
   });
 
   useEffect(() => {
-    fetchStudents();
-    fetchBatches();
+    const init = async () => {
+      try {
+        setFetchLoading(true);
+        await Promise.all([fetchStudents(), fetchBatches()]);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setFetchLoading(false);
+      }
+    };
+    init();
   }, []);
 
   const fetchBatches = async () => {
@@ -109,100 +119,109 @@ const Students = () => {
       </div>
 
       <div className="lms-page-container">
-        <div className="lms-table-section">
-          <table className="lms-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Contact</th>
-                <th>Batches</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((s) => (
-                <tr key={s._id} className={selectedStudent?._id === s._id ? 'selected' : ''} onClick={() => handleRowClick(s)}>
-                  <td>
-                    <div style={{ fontWeight: 600 }}>{s.firstName} {s.lastName !== '.' ? s.lastName : ''}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{s.email}</div>
-                  </td>
-                  <td>
-                    <div>{s.subscriptions?.[0]?.enrollmentNo || 'N/A'}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{s.phone}</div>
-                  </td>
-                  <td>
-                    {s.subscriptions?.map(sub => (
-                      <div key={sub._id} style={{ fontSize: '0.8rem', marginBottom: '4px' }}>
-                        <div style={{ color: '#2563eb', fontWeight: 700 }}>{sub.batchId?.name}</div>
-                        <div style={{ color: '#64748b', fontSize: '0.7rem' }}>{sub.batchId?.startTime} - {sub.batchId?.endTime}</div>
+        {fetchLoading ? (
+          <div className="lms-loading-container">
+            <div className="lms-spinner-large" />
+            <div style={{ marginTop: '12px' }}>Loading students...</div>
+          </div>
+        ) : (
+          <>
+            <div className="lms-table-section">
+              <table className="lms-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Contact</th>
+                    <th>Batches</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {students.map((s) => (
+                    <tr key={s._id} className={selectedStudent?._id === s._id ? 'selected' : ''} onClick={() => handleRowClick(s)}>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{s.firstName} {s.lastName !== '.' ? s.lastName : ''}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{s.email}</div>
+                      </td>
+                      <td>
+                        <div>{s.subscriptions?.[0]?.enrollmentNo || 'N/A'}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{s.phone}</div>
+                      </td>
+                      <td>
+                        {s.subscriptions?.map(sub => (
+                          <div key={sub._id} style={{ fontSize: '0.8rem', marginBottom: '4px' }}>
+                            <div style={{ color: '#2563eb', fontWeight: 700 }}>{sub.batchId?.name}</div>
+                            <div style={{ color: '#64748b', fontSize: '0.7rem' }}>{sub.batchId?.startTime} - {sub.batchId?.endTime}</div>
+                          </div>
+                        ))}
+                      </td>
+                      <td>
+                        <span className="lms-badge" style={{ background: s.isActive ? '#f0fdf4' : '#fef2f2', color: s.isActive ? '#16a34a' : '#dc2626' }}>
+                          {s.isActive ? 'Active' : 'Expired'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className={`lms-details-panel ${selectedStudent ? 'open' : ''}`}>
+              {selectedStudent && editData && (
+                <>
+                  <div className="panel-title">
+                    {editData.firstName}
+                    <button className="lms-btn" onClick={() => setSelectedStudent(null)}>&times;</button>
+                  </div>
+
+                  <div style={{ marginBottom: '24px' }}>
+                    <span className="panel-label">Profile</span>
+                    <input className="lms-input" value={editData.firstName} onChange={e => setEditData({...editData, firstName: e.target.value})} placeholder="First Name" />
+                    <input className="lms-input" value={editData.lastName} onChange={e => setEditData({...editData, lastName: e.target.value})} placeholder="Last Name" />
+                    <input className="lms-input" value={editData.phone} onChange={e => setEditData({...editData, phone: e.target.value})} placeholder="Phone" />
+                  </div>
+
+                  <div style={{ marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span className="panel-label" style={{ marginBottom: 0 }}>Subscriptions</span>
+                    </div>
+                    {editData.subscriptions.map((sub, idx) => (
+                      <div key={sub._id} style={{ padding: '12px', border: '1px solid #f1f5f9', borderRadius: '8px', marginBottom: '10px' }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.85rem', marginBottom: '2px' }}>{sub.batchId?.name}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginBottom: '8px' }}>{sub.batchId?.startTime} - {sub.batchId?.endTime}</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                          <input className="lms-input" style={{marginBottom: 0, fontSize: '0.8rem'}} type="date" value={sub.startDate} onChange={e => { const n = [...editData.subscriptions]; n[idx].startDate = e.target.value; setEditData({...editData, subscriptions: n}); }} />
+                          <input className="lms-input" style={{marginBottom: 0, fontSize: '0.8rem'}} type="date" value={sub.endDate} onChange={e => { const n = [...editData.subscriptions]; n[idx].endDate = e.target.value; setEditData({...editData, subscriptions: n}); }} />
+                        </div>
                       </div>
                     ))}
-                  </td>
-                  <td>
-                    <span className="lms-badge" style={{ background: s.isActive ? '#f0fdf4' : '#fef2f2', color: s.isActive ? '#16a34a' : '#dc2626' }}>
-                      {s.isActive ? 'Active' : 'Expired'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
 
-        <div className={`lms-details-panel ${selectedStudent ? 'open' : ''}`}>
-          {selectedStudent && editData && (
-            <>
-              <div className="panel-title">
-                {editData.firstName}
-                <button className="lms-btn" onClick={() => setSelectedStudent(null)}>&times;</button>
-              </div>
-
-              <div style={{ marginBottom: '24px' }}>
-                <span className="panel-label">Profile</span>
-                <input className="lms-input" value={editData.firstName} onChange={e => setEditData({...editData, firstName: e.target.value})} placeholder="First Name" />
-                <input className="lms-input" value={editData.lastName} onChange={e => setEditData({...editData, lastName: e.target.value})} placeholder="Last Name" />
-                <input className="lms-input" value={editData.phone} onChange={e => setEditData({...editData, phone: e.target.value})} placeholder="Phone" />
-              </div>
-
-              <div style={{ marginBottom: '24px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span className="panel-label" style={{ marginBottom: 0 }}>Subscriptions</span>
-                </div>
-                {editData.subscriptions.map((sub, idx) => (
-                  <div key={sub._id} style={{ padding: '12px', border: '1px solid #f1f5f9', borderRadius: '8px', marginBottom: '10px' }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.85rem', marginBottom: '2px' }}>{sub.batchId?.name}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginBottom: '8px' }}>{sub.batchId?.startTime} - {sub.batchId?.endTime}</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                      <input className="lms-input" style={{marginBottom: 0, fontSize: '0.8rem'}} type="date" value={sub.startDate} onChange={e => { const n = [...editData.subscriptions]; n[idx].startDate = e.target.value; setEditData({...editData, subscriptions: n}); }} />
-                      <input className="lms-input" style={{marginBottom: 0, fontSize: '0.8rem'}} type="date" value={sub.endDate} onChange={e => { const n = [...editData.subscriptions]; n[idx].endDate = e.target.value; setEditData({...editData, subscriptions: n}); }} />
+                    {/* Add New Subscription Dropdown */}
+                    <div style={{ marginTop: '16px', padding: '12px', background: '#f8fafc', borderRadius: '8px' }}>
+                      <span className="panel-label">Add New Batch</span>
+                      <select className="lms-input" style={{ marginBottom: '10px' }} value={newBatchId} onChange={e => setNewBatchId(e.target.value)}>
+                        <option value="">Select Batch...</option>
+                        {batches
+                          .filter(b => !editData.subscriptions.find(s => s.batchId?._id === b._id))
+                          .map(b => (
+                            <option key={b._id} value={b._id}>{b.name} ({b.startTime} - {b.endTime})</option>
+                          ))}
+                      </select>
+                      <button className="lms-btn lms-btn-primary" style={{ width: '100%', fontSize: '0.75rem' }} onClick={handleAddSub} disabled={loading || !newBatchId}>
+                        + Assign Batch
+                      </button>
                     </div>
                   </div>
-                ))}
 
-                {/* Add New Subscription Dropdown */}
-                <div style={{ marginTop: '16px', padding: '12px', background: '#f8fafc', borderRadius: '8px' }}>
-                  <span className="panel-label">Add New Batch</span>
-                  <select className="lms-input" style={{ marginBottom: '10px' }} value={newBatchId} onChange={e => setNewBatchId(e.target.value)}>
-                    <option value="">Select Batch...</option>
-                    {batches
-                      .filter(b => !editData.subscriptions.find(s => s.batchId?._id === b._id))
-                      .map(b => (
-                        <option key={b._id} value={b._id}>{b.name} ({b.startTime} - {b.endTime})</option>
-                      ))}
-                  </select>
-                  <button className="lms-btn lms-btn-primary" style={{ width: '100%', fontSize: '0.75rem' }} onClick={handleAddSub} disabled={loading || !newBatchId}>
-                    + Assign Batch
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button className="lms-btn lms-btn-primary" style={{ flex: 1 }} onClick={handleUpdate} disabled={loading}>Save All</button>
-                <button className="lms-btn lms-btn-danger" onClick={() => handleDelete(selectedStudent._id)}>Delete</button>
-              </div>
-            </>
-          )}
-        </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button className="lms-btn lms-btn-primary" style={{ flex: 1 }} onClick={handleUpdate} disabled={loading}>Save All</button>
+                    <button className="lms-btn lms-btn-danger" onClick={() => handleDelete(selectedStudent._id)}>Delete</button>
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {showModal && (
@@ -261,7 +280,39 @@ const Students = () => {
         </div>
       )}
 
-      {importFile && <ExcelImportModal file={importFile} onConfirm={async d => { setLoading(true); await importStudents(d); setLoading(false); setImportFile(null); fetchStudents(); }} onCancel={() => setImportFile(null)} />}
+      {importFile && (
+        <ExcelImportModal 
+          file={importFile} 
+          onConfirm={async d => { 
+            setLoading(true); 
+            try {
+              const res = await importStudents(d); 
+              let msg = `Successfully imported ${res.imported} students!`;
+              if (res.warnings && res.warnings.length > 0) {
+                msg += `\n\n⚠️ Warnings (${res.warnings.length}):\n` + res.warnings.slice(0, 5).map(w => `• ${w}`).join('\n') + (res.warnings.length > 5 ? `\n...and ${res.warnings.length - 5} more warnings` : '');
+              }
+              if (res.errors && res.errors.length > 0) {
+                msg += `\n\n❌ Errors (${res.errors.length}):\n` + res.errors.slice(0, 5).map(e => `• ${e.row?.Name || e.row?.name || 'Row'}: ${e.error}`).join('\n') + (res.errors.length > 5 ? `\n...and ${res.errors.length - 5} more errors` : '');
+              }
+              alert(msg);
+            } catch (err) {
+              alert(err.message || 'Import failed');
+            } finally {
+              setLoading(false); 
+              setImportFile(null); 
+              fetchStudents();
+            }
+          }} 
+          onCancel={() => setImportFile(null)} 
+        />
+      )}
+
+      {loading && (
+        <div className="lms-overlay-loader">
+          <div className="lms-spinner-large" />
+          <div>Processing action... Please wait</div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

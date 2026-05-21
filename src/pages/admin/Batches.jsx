@@ -10,6 +10,7 @@ const Batches = () => {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ name: '', startTime: '09:00', endTime: '18:00', weekdays: [] });
   const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
   const [importFile, setImportFile] = useState(null);
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [meetData, setMeetData] = useState({ meetingNumber: '', password: '', status: 'scheduled' });
@@ -27,7 +28,17 @@ const Batches = () => {
   };
 
   useEffect(() => {
-    fetchBatches();
+    const init = async () => {
+      try {
+        setFetchLoading(true);
+        await fetchBatches();
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setFetchLoading(false);
+      }
+    };
+    init();
   }, []);
 
   const fetchBatches = async () => {
@@ -118,111 +129,120 @@ const Batches = () => {
       </div>
 
       <div className="lms-page-container">
-        <div className="lms-table-section">
-          <table className="lms-table">
-            <thead>
-              <tr>
-                <th style={{ width: '80px' }}>ID</th>
-                <th>Batch Name</th>
-                <th>Timing</th>
-              </tr>
-            </thead>
-            <tbody>
-              {batches.map((b, idx) => (
-                <tr key={b._id} onClick={() => handleBatchClick(b)} className={selectedBatch?._id === b._id ? 'selected' : ''}>
-                  <td style={{ color: '#94a3b8' }}>#{b.batchId || (idx + 1)}</td>
-                  <td style={{ fontWeight: 600 }}>{b.name}</td>
-                  <td>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                      <span className="lms-badge" style={{ background: '#eff6ff', color: '#2563eb' }}>
-                        {displayTime(b.startTime)} - {displayTime(b.endTime)}
-                      </span>
-                      {b.weekdays && b.weekdays.map(d => (
-                        <span key={d} className="lms-badge" style={{ background: '#f1f5f9', color: '#475569', fontSize: '0.7rem' }}>
-                          {DAYS[d]}
-                        </span>
-                      ))}
+        {fetchLoading ? (
+          <div className="lms-loading-container">
+            <div className="lms-spinner-large" />
+            <div style={{ marginTop: '12px' }}>Loading batches...</div>
+          </div>
+        ) : (
+          <>
+            <div className="lms-table-section">
+              <table className="lms-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: '80px' }}>ID</th>
+                    <th>Batch Name</th>
+                    <th>Timing</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {batches.map((b, idx) => (
+                    <tr key={b._id} onClick={() => handleBatchClick(b)} className={selectedBatch?._id === b._id ? 'selected' : ''}>
+                      <td style={{ color: '#94a3b8' }}>#{b.batchId || (idx + 1)}</td>
+                      <td style={{ fontWeight: 600 }}>{b.name}</td>
+                      <td>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          <span className="lms-badge" style={{ background: '#eff6ff', color: '#2563eb' }}>
+                            {displayTime(b.startTime)} - {displayTime(b.endTime)}
+                          </span>
+                          {b.weekdays && b.weekdays.map(d => (
+                            <span key={d} className="lms-badge" style={{ background: '#f1f5f9', color: '#475569', fontSize: '0.7rem' }}>
+                              {DAYS[d]}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className={`lms-details-panel ${selectedBatch ? 'open' : ''}`}>
+              {selectedBatch && (
+                <>
+                  <div className="panel-title">
+                    {selectedBatch.name}
+                    <button className="lms-btn" onClick={() => setSelectedBatch(null)}>&times;</button>
+                  </div>
+
+                  <div style={{ marginBottom: '24px' }}>
+                    <div style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '10px' }}>
+                      Timing: <strong>{displayTime(selectedBatch.startTime)} - {displayTime(selectedBatch.endTime)}</strong>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className={`lms-details-panel ${selectedBatch ? 'open' : ''}`}>
-          {selectedBatch && (
-            <>
-              <div className="panel-title">
-                {selectedBatch.name}
-                <button className="lms-btn" onClick={() => setSelectedBatch(null)}>&times;</button>
-              </div>
-
-              <div style={{ marginBottom: '24px' }}>
-                <div style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '10px' }}>
-                  Timing: <strong>{displayTime(selectedBatch.startTime)} - {displayTime(selectedBatch.endTime)}</strong>
-                </div>
-                {selectedBatch.weekdays && selectedBatch.weekdays.length > 0 && (
-                  <div style={{ marginBottom: '20px', display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                    {selectedBatch.weekdays.map(d => (
-                      <span key={d} className="lms-badge" style={{ background: '#f1f5f9', color: '#475569' }}>
-                        {DAYS[d]}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                <span className="panel-label">Meeting Credentials</span>
-                <div className="lms-form-group">
-                  <label>Zoom Meeting ID</label>
-                  <input className="lms-input" value={meetData.meetingNumber} onChange={e => setMeetData({...meetData, meetingNumber: e.target.value})} />
-                </div>
-                <div className="lms-form-group">
-                  <label>Password</label>
-                  <input className="lms-input" value={meetData.password} onChange={e => setMeetData({...meetData, password: e.target.value})} />
-                </div>
-                <div className="lms-form-group">
-                  <label>Status</label>
-                  <select className="lms-input" value={meetData.status} onChange={e => setMeetData({...meetData, status: e.target.value})}>
-                    <option value="scheduled">Scheduled</option>
-                    <option value="live">Live</option>
-                    <option value="ended">Ended</option>
-                  </select>
-                </div>
-                <button className="lms-btn lms-btn-primary" style={{ width: '100%' }} onClick={handleSaveMeet} disabled={loading}>Save Meet Details</button>
-              </div>
-
-              <div style={{ marginBottom: '24px' }}>
-                <span className="panel-label">Assigned Trainers ({batchDetails.trainers.length})</span>
-                {batchDetails.trainers.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
-                    {batchDetails.trainers.map(t => (
-                      <div key={t._id} style={{ padding: '10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.85rem' }}>
-                        <div style={{ fontWeight: 600 }}>{t.name}</div>
-                        <div style={{ color: '#64748b' }}>{t.email}</div>
+                    {selectedBatch.weekdays && selectedBatch.weekdays.length > 0 && (
+                      <div style={{ marginBottom: '20px', display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                        {selectedBatch.weekdays.map(d => (
+                          <span key={d} className="lms-badge" style={{ background: '#f1f5f9', color: '#475569' }}>
+                            {DAYS[d]}
+                          </span>
+                        ))}
                       </div>
-                    ))}
+                    )}
+                    <span className="panel-label">Meeting Credentials</span>
+                    <div className="lms-form-group">
+                      <label>Zoom Meeting ID</label>
+                      <input className="lms-input" value={meetData.meetingNumber} onChange={e => setMeetData({...meetData, meetingNumber: e.target.value})} />
+                    </div>
+                    <div className="lms-form-group">
+                      <label>Password</label>
+                      <input className="lms-input" value={meetData.password} onChange={e => setMeetData({...meetData, password: e.target.value})} />
+                    </div>
+                    <div className="lms-form-group">
+                      <label>Status</label>
+                      <select className="lms-input" value={meetData.status} onChange={e => setMeetData({...meetData, status: e.target.value})}>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="live">Live</option>
+                        <option value="ended">Ended</option>
+                      </select>
+                    </div>
+                    <button className="lms-btn lms-btn-primary" style={{ width: '100%' }} onClick={handleSaveMeet} disabled={loading}>Save Meet Details</button>
                   </div>
-                ) : <div className="panel-empty">No trainers assigned</div>}
-              </div>
 
-              <div style={{ marginBottom: '24px' }}>
-                <span className="panel-label">Enrolled Students ({batchDetails.students.length})</span>
-                {batchDetails.students.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
-                    {batchDetails.students.map(s => (
-                      <div key={s._id} style={{ padding: '10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.85rem' }}>
-                        <div style={{ fontWeight: 600 }}>{s.name}</div>
-                        <div style={{ color: '#64748b' }}>{s.enrollmentNo || 'No ID'} | {s.phone || 'No Phone'}</div>
+                  <div style={{ marginBottom: '24px' }}>
+                    <span className="panel-label">Assigned Trainers ({batchDetails.trainers.length})</span>
+                    {batchDetails.trainers.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+                        {batchDetails.trainers.map(t => (
+                          <div key={t._id} style={{ padding: '10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.85rem' }}>
+                            <div style={{ fontWeight: 600 }}>{t.name}</div>
+                            <div style={{ color: '#64748b' }}>{t.email}</div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    ) : <div className="panel-empty">No trainers assigned</div>}
                   </div>
-                ) : <div className="panel-empty">No students enrolled</div>}
-              </div>
 
-              <button className="lms-btn lms-btn-danger" style={{ width: '100%', marginTop: 'auto' }} onClick={() => handleDelete(selectedBatch._id)}>Delete Batch</button>
-            </>
-          )}
-        </div>
+                  <div style={{ marginBottom: '24px' }}>
+                    <span className="panel-label">Enrolled Students ({batchDetails.students.length})</span>
+                    {batchDetails.students.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+                        {batchDetails.students.map(s => (
+                          <div key={s._id} style={{ padding: '10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.85rem' }}>
+                            <div style={{ fontWeight: 600 }}>{s.name}</div>
+                            <div style={{ color: '#64748b' }}>{s.enrollmentNo || 'No ID'} | {s.phone || 'No Phone'}</div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : <div className="panel-empty">No students enrolled</div>}
+                  </div>
+
+                  <button className="lms-btn lms-btn-danger" style={{ width: '100%', marginTop: 'auto' }} onClick={() => handleDelete(selectedBatch._id)}>Delete Batch</button>
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {showModal && (
@@ -275,6 +295,13 @@ const Batches = () => {
       )}
 
       {importFile && <ExcelImportModal file={importFile} onConfirm={async d => { setLoading(true); await importBatches(d); setLoading(false); setImportFile(null); fetchBatches(); }} onCancel={() => setImportFile(null)} />}
+
+      {loading && (
+        <div className="lms-overlay-loader">
+          <div className="lms-spinner-large" />
+          <div>Processing action... Please wait</div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };
