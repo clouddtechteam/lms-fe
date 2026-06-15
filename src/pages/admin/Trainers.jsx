@@ -3,6 +3,7 @@ import DashboardLayout from '../../layouts/DashboardLayout.jsx';
 import { getTrainers, createTrainer, importTrainers, deleteTrainer, updateTrainer } from '../../api/trainers.js';
 import { getBatches } from '../../api/batches.js';
 import ExcelImportModal from '../../components/ExcelImportModal.jsx';
+import * as xlsx from 'xlsx';
 import '../../admin-unified.css';
 
 const Trainers = () => {
@@ -79,11 +80,27 @@ const Trainers = () => {
     fetchTrainers();
   };
 
+  const handleDownloadTemplate = () => {
+    const data = [
+      {
+        "name": "Jane Smith",
+        "email": "jane.smith@example.com",
+        "phone": "9876543211",
+        "batchid": "Batch-A"
+      }
+    ];
+    const worksheet = xlsx.utils.json_to_sheet(data);
+    const workbook = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(workbook, worksheet, "Trainers Template");
+    xlsx.writeFile(workbook, "trainer_import_template.xlsx");
+  };
+
   return (
     <DashboardLayout title="Trainers">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2 style={{ margin: 0 }}>Trainers ({trainers.length})</h2>
         <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="lms-btn lms-btn-outline" onClick={handleDownloadTemplate}>Download Template</button>
           <button className="lms-btn lms-btn-outline" onClick={() => document.getElementById('tr-excel').click()}>Import Excel</button>
           <input type="file" id="tr-excel" hidden accept=".xlsx, .xls" onChange={e => { if(e.target.files[0]) setImportFile(e.target.files[0]); e.target.value=null; }} />
           <button className="lms-btn lms-btn-primary" onClick={() => setShowModal(true)}>+ New Trainer</button>

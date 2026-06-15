@@ -3,6 +3,7 @@ import DashboardLayout from '../../layouts/DashboardLayout.jsx';
 import { getBatches, createBatch, deleteBatch, importBatches, getBatchDetails } from '../../api/batches.js';
 import { getMeetByBatch, createOrUpdateMeet } from '../../api/meet.js';
 import ExcelImportModal from '../../components/ExcelImportModal.jsx';
+import * as xlsx from 'xlsx';
 import '../../admin-unified.css';
 
 const Batches = () => {
@@ -117,11 +118,28 @@ const Batches = () => {
     }
   };
 
+  const handleDownloadTemplate = () => {
+    const data = [
+      {
+        "batchId": "B-001",
+        "name": "Full Stack Dev - Mornings",
+        "startTime": "09:00",
+        "endTime": "17:00",
+        "weekdays": "1,2,3,4,5"
+      }
+    ];
+    const worksheet = xlsx.utils.json_to_sheet(data);
+    const workbook = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(workbook, worksheet, "Batches Template");
+    xlsx.writeFile(workbook, "batch_import_template.xlsx");
+  };
+
   return (
     <DashboardLayout title="Batches">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2 style={{ margin: 0 }}>Batches ({batches.length})</h2>
         <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="lms-btn lms-btn-outline" onClick={handleDownloadTemplate}>Download Template</button>
           <button className="lms-btn lms-btn-outline" onClick={() => document.getElementById('bt-excel').click()}>Import Excel</button>
           <input type="file" id="bt-excel" hidden accept=".xlsx,.xls" onChange={e => { if(e.target.files[0]) setImportFile(e.target.files[0]); e.target.value=null; }} />
           <button className="lms-btn lms-btn-primary" onClick={() => setShowModal(true)}>+ Add Batch</button>

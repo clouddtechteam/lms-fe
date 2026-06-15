@@ -3,6 +3,7 @@ import DashboardLayout from '../../layouts/DashboardLayout.jsx';
 import { getStudents, createStudent, importStudents, deleteStudent, updateStudent, addSubscription } from '../../api/students.js';
 import { getBatches } from '../../api/batches.js';
 import ExcelImportModal from '../../components/ExcelImportModal.jsx';
+import * as xlsx from 'xlsx';
 import '../../admin-unified.css';
 
 const Students = () => {
@@ -107,11 +108,32 @@ const Students = () => {
     fetchStudents();
   };
 
+  const handleDownloadTemplate = () => {
+    const data = [
+      {
+        "Name": "John Doe",
+        "Email": "john.doe@example.com",
+        "Phone": "9876543210",
+        "Enrollment No": "STU001",
+        "Date of Birth": "1998-05-15",
+        "Batch ID": "Batch-A",
+        "Status": "active",
+        "Start Date": "2026-06-01",
+        "End Date": "2026-12-31"
+      }
+    ];
+    const worksheet = xlsx.utils.json_to_sheet(data);
+    const workbook = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(workbook, worksheet, "Students Template");
+    xlsx.writeFile(workbook, "student_import_template.xlsx");
+  };
+
   return (
     <DashboardLayout title="Students">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2 style={{ margin: 0 }}>Students ({students.length})</h2>
         <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="lms-btn lms-btn-outline" onClick={handleDownloadTemplate}>Download Template</button>
           <button className="lms-btn lms-btn-outline" onClick={() => document.getElementById('st-excel').click()}>Import Excel</button>
           <input type="file" id="st-excel" hidden accept=".xlsx, .xls" onChange={e => { if(e.target.files[0]) setImportFile(e.target.files[0]); e.target.value=null; }} />
           <button className="lms-btn lms-btn-primary" onClick={() => setShowModal(true)}>+ New Student</button>
