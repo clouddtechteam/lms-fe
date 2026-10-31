@@ -17,6 +17,7 @@ const Batches = () => {
     runTime: '06:00',
     runDays: [1, 2, 3, 4, 5],
     scope: 'all',
+    linkMode: 'single_shared',
     batchIds: [],
     lastRunResults: []
   });
@@ -75,6 +76,7 @@ const Batches = () => {
           runTime: cfg.runTime || '06:00',
           runDays: Array.isArray(cfg.runDays) ? cfg.runDays : [1, 2, 3, 4, 5],
           scope: cfg.scope || 'all',
+          linkMode: cfg.linkMode || 'single_shared',
           batchIds: Array.isArray(cfg.batchIds) ? cfg.batchIds : [],
           lastRunAt: cfg.lastRunAt,
           lastRunStatus: cfg.lastRunStatus,
@@ -589,6 +591,36 @@ const Batches = () => {
                   )}
                 </div>
 
+                {/* Meeting Link Mode */}
+                <div className="lms-form-group">
+                  <label>Meeting Link Mode</label>
+                  <div style={{ display: 'flex', gap: '20px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.88rem' }}>
+                      <input 
+                        type="radio" 
+                        name="cronLinkMode" 
+                        checked={cronConfig.linkMode !== 'per_batch'} 
+                        onChange={() => setCronConfig({...cronConfig, linkMode: 'single_shared'})} 
+                      />
+                      <span><strong>Same Link for All Batches</strong> (1 Shared Link)</span>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.88rem' }}>
+                      <input 
+                        type="radio" 
+                        name="cronLinkMode" 
+                        checked={cronConfig.linkMode === 'per_batch'} 
+                        onChange={() => setCronConfig({...cronConfig, linkMode: 'per_batch'})} 
+                      />
+                      <span>Separate Link per Batch</span>
+                    </label>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                    {cronConfig.linkMode !== 'per_batch' 
+                      ? 'Creates 1 central Zoom meeting and assigns the same Meeting ID & password to all targeted batches.'
+                      : 'Creates a unique Zoom meeting with different links for each individual batch.'}
+                  </div>
+                </div>
+
                 {/* Last Run Info */}
                 {cronConfig.lastRunAt && (
                   <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.8rem', color: '#64748b', marginBottom: '16px' }}>
@@ -597,69 +629,111 @@ const Batches = () => {
                   </div>
                 )}
 
-                {/* Generated New Links List Display */}
-                {cronConfig.lastRunResults && cronConfig.lastRunResults.length > 0 && (
-                  <div style={{ marginBottom: '20px', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px', background: '#f8fafc' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e293b' }}>
-                        Generated Zoom Links ({cronConfig.lastRunResults.filter(r => r.status === 'success').length})
-                      </span>
-                      <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Active credentials</span>
-                    </div>
+                {/* Generated Zoom Links Display */}
+                {cronConfig.lastRunResults && cronConfig.lastRunResults.length > 0 && (() => {
+                  const successfulResults = cronConfig.lastRunResults.filter(r => r.status === 'success');
+                  const isAllSameLink = successfulResults.length > 0 && successfulResults.every(r => r.meetingNumber === successfulResults[0].meetingNumber);
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '200px', overflowY: 'auto' }}>
-                      {cronConfig.lastRunResults.map((item, idx) => (
-                        <div key={idx} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                            <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.85rem' }}>{item.batchName}</div>
-                            <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '4px', background: item.status === 'success' ? '#f0fdf4' : '#fef2f2', color: item.status === 'success' ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
-                              {item.status === 'success' ? 'Active' : 'Failed'}
+                  return (
+                    <div style={{ marginBottom: '20px', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px', background: '#f8fafc' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e293b' }}>
+                          Generated Zoom Links ({successfulResults.length} active)
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                          {isAllSameLink ? 'Single Shared Link' : 'Separate Links'}
+                        </span>
+                      </div>
+
+                      {/* Prominent Shared Link Box if all batches use the same link */}
+                      {isAllSameLink && (
+                        <div style={{ background: '#ffffff', border: '1.5px solid #2563eb', borderRadius: '8px', padding: '12px', marginBottom: '12px', boxShadow: '0 2px 4px rgba(37,99,235,0.06)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <span style={{ fontWeight: 700, color: '#1e40af', fontSize: '0.85rem' }}>
+                              🔗 Active Shared Meeting Link
+                            </span>
+                            <span style={{ fontSize: '0.72rem', background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                              Shared by {successfulResults.length} batches
                             </span>
                           </div>
 
-                          {item.status === 'success' ? (
-                            <>
-                              <div style={{ display: 'flex', gap: '14px', fontSize: '0.78rem', color: '#475569', marginBottom: '6px' }}>
-                                <span>ID: <strong style={{ color: '#0f172a' }}>{item.meetingNumber}</strong></span>
-                                <span>Password: <strong style={{ color: '#0f172a' }}>{item.password || '••••••'}</strong></span>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <input 
-                                  readOnly 
-                                  value={item.joinUrl} 
-                                  style={{ flex: 1, padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.75rem', background: '#f8fafc', color: '#2563eb' }}
-                                />
-                                <button 
-                                  type="button" 
-                                  className="lms-copy-btn" 
-                                  style={{ padding: '5px 10px', fontSize: '0.75rem' }}
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(item.joinUrl);
-                                    setToastMsg(`Copied link for ${item.batchName}!`);
-                                    setTimeout(() => setToastMsg(''), 3000);
-                                  }}
-                                >
-                                  Copy
-                                </button>
-                                <a 
-                                  href={item.joinUrl} 
-                                  target="_blank" 
-                                  rel="noreferrer" 
-                                  className="lms-btn lms-btn-outline" 
-                                  style={{ padding: '5px 10px', fontSize: '0.75rem', textDecoration: 'none' }}
-                                >
-                                  Open
-                                </a>
-                              </div>
-                            </>
-                          ) : (
-                            <div style={{ color: '#dc2626', fontSize: '0.78rem' }}>Error: {item.error}</div>
-                          )}
+                          <div style={{ display: 'flex', gap: '20px', fontSize: '0.82rem', color: '#334155', marginBottom: '8px' }}>
+                            <div>ID: <strong style={{ color: '#0f172a' }}>{successfulResults[0].meetingNumber}</strong></div>
+                            <div>Password: <strong style={{ color: '#0f172a' }}>{successfulResults[0].password || 'None'}</strong></div>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                            <input 
+                              readOnly 
+                              value={successfulResults[0].joinUrl} 
+                              style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.78rem', background: '#f8fafc', color: '#2563eb', fontWeight: 500 }}
+                            />
+                            <button 
+                              type="button" 
+                              className="lms-copy-btn" 
+                              style={{ padding: '6px 14px', fontSize: '0.78rem' }}
+                              onClick={() => {
+                                navigator.clipboard.writeText(successfulResults[0].joinUrl);
+                                setToastMsg('Copied shared Zoom link to clipboard!');
+                                setTimeout(() => setToastMsg(''), 3000);
+                              }}
+                            >
+                              Copy
+                            </button>
+                            <a 
+                              href={successfulResults[0].joinUrl} 
+                              target="_blank" 
+                              rel="noreferrer" 
+                              className="lms-btn lms-btn-outline" 
+                              style={{ padding: '6px 14px', fontSize: '0.78rem', textDecoration: 'none' }}
+                            >
+                              Open
+                            </a>
+                          </div>
+
+                          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                            <strong>Assigned to:</strong> {successfulResults.map(r => r.batchName).join(', ')}
+                          </div>
                         </div>
-                      ))}
+                      )}
+
+                      {/* Detailed list if individual mode or failures exist */}
+                      {(!isAllSameLink || cronConfig.lastRunResults.some(r => r.status !== 'success')) && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
+                          {cronConfig.lastRunResults.map((item, idx) => (
+                            <div key={idx} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px 10px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                <div style={{ fontWeight: 600, color: '#1e293b', fontSize: '0.8rem' }}>{item.batchName}</div>
+                                <span style={{ fontSize: '0.7rem', padding: '1px 6px', borderRadius: '4px', background: item.status === 'success' ? '#f0fdf4' : '#fef2f2', color: item.status === 'success' ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
+                                  {item.status === 'success' ? 'Active' : 'Failed'}
+                                </span>
+                              </div>
+                              {item.status === 'success' ? (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: '#475569' }}>
+                                  <span>ID: <strong>{item.meetingNumber}</strong> | Pass: <strong>{item.password || '••••••'}</strong></span>
+                                  <button 
+                                    type="button" 
+                                    className="lms-copy-btn" 
+                                    style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(item.joinUrl);
+                                      setToastMsg(`Copied link for ${item.batchName}!`);
+                                      setTimeout(() => setToastMsg(''), 3000);
+                                    }}
+                                  >
+                                    Copy
+                                  </button>
+                                </div>
+                              ) : (
+                                <div style={{ color: '#dc2626', fontSize: '0.75rem' }}>Error: {item.error}</div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Modal Footer Actions */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px', flexWrap: 'wrap', gap: '10px' }}>
