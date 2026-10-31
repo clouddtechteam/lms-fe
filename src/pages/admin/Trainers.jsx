@@ -59,6 +59,7 @@ const Trainers = () => {
       firstName: trainer.firstName,
       lastName: trainer.lastName,
       phone: trainer.phone,
+      password: '',
       batchIds: trainer.batchIds?.map(b => b.batchId || b.name) || []
     });
   };
@@ -159,6 +160,36 @@ const Trainers = () => {
                     <input className="lms-input" value={editData.firstName} onChange={e => setEditData({...editData, firstName: e.target.value})} placeholder="First Name" />
                     <input className="lms-input" value={editData.lastName} onChange={e => setEditData({...editData, lastName: e.target.value})} placeholder="Last Name" />
                     <input className="lms-input" value={editData.phone} onChange={e => setEditData({...editData, phone: e.target.value})} placeholder="Phone" />
+                  </div>
+
+                  <div style={{ marginBottom: '24px' }}>
+                    <span className="panel-label">Reset Password</span>
+                    <input 
+                      type="text" 
+                      className="lms-input" 
+                      placeholder="Enter new password (leave blank to keep current)" 
+                      value={editData.password || ''} 
+                      onChange={e => setEditData({...editData, password: e.target.value})} 
+                      style={{ marginBottom: '6px' }}
+                    />
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button 
+                        type="button" 
+                        className="lms-btn lms-btn-outline" 
+                        style={{ fontSize: '0.72rem', padding: '4px 10px' }}
+                        onClick={() => setEditData({...editData, password: editData.phone || 'trainer123'})}
+                      >
+                        Reset to Phone Number ({editData.phone || 'trainer123'})
+                      </button>
+                      <button 
+                        type="button" 
+                        className="lms-btn lms-btn-outline" 
+                        style={{ fontSize: '0.72rem', padding: '4px 10px' }}
+                        onClick={() => setEditData({...editData, password: 'trainer123'})}
+                      >
+                        Reset to "trainer123"
+                      </button>
+                    </div>
                   </div>
 
                   <div style={{ marginBottom: '24px' }}>
