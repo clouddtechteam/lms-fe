@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout.jsx';
 import { getTrainerLiveClasses } from '../../api/meet.js';
 import { useNavigate } from 'react-router-dom';
+import '../../admin-unified.css';
 
 const styles = `
   .classes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
-  .class-card { background: white; border-radius: 16px; border: 1px solid #e2e8f0; padding: 24px; transition: 0.3s; position: relative; overflow: hidden; }
+  .class-card { background: white; border-radius: 16px; border: 1px solid #e2e8f0; padding: 24px; transition: 0.3s; position: relative; overflow: hidden; display: flex; flex-direction: column; }
   .class-card:hover { transform: translateY(-4px); box-shadow: 0 12px 20px -10px rgba(0,0,0,0.1); }
   .class-card.live { border-color: #0ea5e9; background: #f0f9ff; }
   
@@ -20,7 +21,7 @@ const styles = `
   }
 
   .batch-name { font-size: 1.25rem; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
-  .batch-time { display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 0.9rem; margin-bottom: 24px; }
+  .batch-time { display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 0.9rem; margin-bottom: 16px; }
   
   .join-btn { 
     width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; 
@@ -149,6 +150,7 @@ const canJoinSession = (meet) => {
 const TrainerClasses = () => {
   const [meets, setMeets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [toastMsg, setToastMsg] = useState('');
   const navigate = useNavigate();
 
   const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -160,18 +162,44 @@ const TrainerClasses = () => {
       .finally(() => setLoading(false));
   }, []);
 
+  const copyMeetingInvite = (meet) => {
+    const b = meet?.batch || {};
+    const meetingNumber = meet?.meetingNumber || 'N/A';
+    const password = meet?.password || 'N/A';
+    const joinUrl = meet?.joinUrl || `https://us02web.zoom.us/j/${String(meetingNumber).replace(/\s/g, '')}?pwd=${password}`;
+    
+    const text = `📚 Class: ${b.name || 'Live Session'}
+🕐 Time: ${b.startTime || ''} - ${b.endTime || ''}
+🔗 Direct Join Link: ${joinUrl}
+🆔 Meeting ID: ${meetingNumber}
+🔑 Passcode: ${password}`;
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setToastMsg('Meeting details copied to clipboard!');
+      setTimeout(() => setToastMsg(''), 3000);
+    } else {
+      alert(text);
+    }
+  };
+
   return (
     <DashboardLayout title="My Classes (Trainer)">
       <style>{styles}</style>
       
       {loading ? (
-        <p>Loading assigned classes...</p>
+        <div className="lms-loading-container" style={{ minHeight: '350px' }}>
+          <div className="lms-spinner-large" />
+          <div style={{ fontWeight: 600, color: '#64748b' }}>Loading assigned classes...</div>
+        </div>
       ) : (
         <div className="classes-grid">
           {meets.map(meet => {
             const b = meet.batch || {};
             const isLive = meet.status === 'live';
             const past = isClassPast(meet);
+            const hasCredentials = meet.meetingNumber && meet.meetingNumber !== 'Not Started' && meet.meetingNumber !== 'Not Scheduled';
+
             return (
               <div key={meet._id} className={`class-card ${isLive ? 'live' : ''}`}>
                 <span className={`status-badge ${isLive ? 'status-live' : past ? '' : 'status-scheduled'}`}
@@ -192,19 +220,48 @@ const TrainerClasses = () => {
                   {b.startTime} - {b.endTime}
                 </div>
 
-                {canJoinSession(meet) ? (
-                  <button
-                    className="join-btn"
-                    onClick={() => navigate(`/live/${b._id || meet.batch}`)}
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
-                    {isLive ? 'Manage Live Meeting' : 'Start Scheduled Meeting'}
-                  </button>
-                ) : (
-                  <div style={{ padding: '12px', textAlign: 'center', background: '#f8fafc', borderRadius: '8px', color: '#94a3b8', fontSize: '0.85rem' }}>
-                    {past ? 'Session has ended' : 'Join window opens 15m before start'}
+                {/* Meeting Credentials Snippet */}
+                {hasCredentials && (
+                  <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px', fontSize: '0.8rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ color: '#64748b' }}>Meeting ID:</span>
+                      <span style={{ fontWeight: 600, color: '#1e293b' }}>{meet.meetingNumber}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>Passcode:</span>
+                      <span style={{ fontWeight: 600, color: '#1e293b' }}>{meet.password || '••••••'}</span>
+                    </div>
                   </div>
                 )}
+
+                <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {canJoinSession(meet) ? (
+                    <button
+                      className="join-btn"
+                      onClick={() => navigate(`/live/${b._id || meet.batch}`)}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                      {isLive ? 'Manage Live Meeting' : 'Start Scheduled Meeting'}
+                    </button>
+                  ) : (
+                    <div style={{ padding: '10px', textAlign: 'center', background: '#f8fafc', borderRadius: '8px', color: '#94a3b8', fontSize: '0.85rem' }}>
+                      {past ? 'Session has ended' : 'Join window opens 15m before start'}
+                    </div>
+                  )}
+
+                  {/* Shareable / Copy Link Button */}
+                  {hasCredentials && (
+                    <button
+                      type="button"
+                      className="lms-copy-btn"
+                      style={{ width: '100%', justifyContent: 'center' }}
+                      onClick={() => copyMeetingInvite(meet)}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                      Copy Meeting Details & Link
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -214,6 +271,13 @@ const TrainerClasses = () => {
               <p style={{ color: '#94a3b8' }}>You haven't been assigned as a trainer to any batches yet.</p>
             </div>
           )}
+        </div>
+      )}
+
+      {toastMsg && (
+        <div className="lms-toast">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          {toastMsg}
         </div>
       )}
     </DashboardLayout>

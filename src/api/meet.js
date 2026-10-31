@@ -61,3 +61,34 @@ export const getTrainerLiveClasses = async () => {
   if (!res.ok) throw new Error(data.message || 'Failed to fetch trainer live classes');
   return data;
 };
+
+// ── Admin Cron API ──
+export const getCronConfig = async () => {
+  const res = await fetch(`${BASE_URL}/meet/cron/config`, {
+    headers: getHeaders()
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to fetch cron configuration');
+  return data;
+};
+
+export const updateCronConfig = async (configData) => {
+  const res = await fetch(`${BASE_URL}/meet/cron/config`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(configData)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to update cron configuration');
+  return data;
+};
+
+export const triggerCronNow = async () => {
+  const res = await fetch(`${BASE_URL}/meet/cron/trigger-now`, {
+    method: 'POST',
+    headers: getHeaders()
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to trigger meeting generation');
+  return data;
+};

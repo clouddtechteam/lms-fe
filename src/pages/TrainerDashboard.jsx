@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { getTrainerLiveClasses } from '../api/meet.js';
+import '../admin-unified.css';
 
 // Helper to check if a meet is scheduled on a given day of the week
 const isScheduledOn = (meet, dayOfWeek, batchOverride = null) => {
@@ -301,7 +302,29 @@ const TrainerDashboard = () => {
   const [allMeets, setAllMeets] = useState([]);
   const [batchCount, setBatchCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [toastMsg, setToastMsg] = useState('');
   const navigate = useNavigate();
+
+  const copyMeetingInvite = (meet) => {
+    const b = meet?.batch || {};
+    const meetingNumber = meet?.meetingNumber || 'N/A';
+    const password = meet?.password || 'N/A';
+    const joinUrl = meet?.joinUrl || `https://us02web.zoom.us/j/${String(meetingNumber).replace(/\s/g, '')}?pwd=${password}`;
+    
+    const text = `📚 Class: ${b.name || 'Live Session'}
+🕐 Time: ${b.startTime || ''} - ${b.endTime || ''}
+🔗 Direct Join Link: ${joinUrl}
+🆔 Meeting ID: ${meetingNumber}
+🔑 Passcode: ${password}`;
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setToastMsg('Meeting details copied to clipboard!');
+      setTimeout(() => setToastMsg(''), 3000);
+    } else {
+      alert(text);
+    }
+  };
 
   const fetchAllMeets = async () => {
     try {
@@ -360,7 +383,10 @@ const TrainerDashboard = () => {
           </div>
 
           {loading ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Loading classes...</div>
+            <div className="lms-loading-container" style={{ padding: '60px 20px', minHeight: '260px' }}>
+              <div className="lms-spinner-large" />
+              <div style={{ fontWeight: 600, color: '#64748b' }}>Loading next scheduled class...</div>
+            </div>
           ) : closestMeet ? (
             <div className="meet-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -382,17 +408,44 @@ const TrainerDashboard = () => {
                     </span>
                   ))}
                 </div>
-                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155' }}>
+                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155', marginBottom: '12px' }}>
                   🕐 {closestMeet.batch?.startTime} – {closestMeet.batch?.endTime}
                 </div>
+
+                {closestMeet.meetingNumber && closestMeet.meetingNumber !== 'Not Started' && (
+                  <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px', fontSize: '0.8rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ color: '#64748b' }}>Meeting ID:</span>
+                      <span style={{ fontWeight: 600, color: '#1e293b' }}>{closestMeet.meetingNumber}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>Passcode:</span>
+                      <span style={{ fontWeight: 600, color: '#1e293b' }}>{closestMeet.password || '••••••'}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Action button – visible only in the 15m window */}
-              {canJoinSession(closestMeet) && (
-                <Link to={`/live/${closestMeet.batch?._id || closestMeet.batch}`} className="join-now-btn">
-                  {closestMeet.status === 'live' ? 'Manage Session' : 'Start Session'}
-                </Link>
-              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {/* Action button – visible only in the 15m window */}
+                {canJoinSession(closestMeet) && (
+                  <Link to={`/live/${closestMeet.batch?._id || closestMeet.batch}`} className="join-now-btn">
+                    {closestMeet.status === 'live' ? 'Manage Session' : 'Start Session'}
+                  </Link>
+                )}
+
+                {closestMeet.meetingNumber && closestMeet.meetingNumber !== 'Not Started' && (
+                  <button
+                    type="button"
+                    className="lms-copy-btn"
+                    style={{ width: '100%', justifyContent: 'center' }}
+                    onClick={() => copyMeetingInvite(closestMeet)}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    Copy Meeting Invite & Link
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <div style={{ padding: '60px 20px', textAlign: 'center', background: '#f8fafc', borderRadius: '16px', border: '1px dashed #e2e8f0' }}>
@@ -429,6 +482,13 @@ const TrainerDashboard = () => {
           </div>
         </div>
       </div>
+
+      {toastMsg && (
+        <div className="lms-toast">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          {toastMsg}
+        </div>
+      )}
     </DashboardLayout>
   );
 };

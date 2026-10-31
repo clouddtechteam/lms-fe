@@ -3,8 +3,7 @@ import DashboardLayout from '../layouts/DashboardLayout.jsx';
 import { getBatches } from '../api/batches.js';
 import { getTrainers } from '../api/trainers.js';
 import { getStudents } from '../api/students.js';
-
-
+import '../admin-unified.css';
 
 const styles = `
   .lms-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 32px; }
@@ -23,17 +22,23 @@ const styles = `
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({ batches: 0, trainers: 0, students: 0 });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
-      const b = await getBatches();
-      const t = await getTrainers();
-      const s = await getStudents();
-      setStats({
-        batches: b?.length || 0,
-        trainers: t?.length || 0,
-        students: s?.length || 0,
-      });
+      try {
+        setLoading(true);
+        const [b, t, s] = await Promise.all([getBatches(), getTrainers(), getStudents()]);
+        setStats({
+          batches: b?.length || 0,
+          trainers: t?.length || 0,
+          students: s?.length || 0,
+        });
+      } catch (err) {
+        console.error('Failed to fetch admin stats:', err);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchStats();
   }, []);
@@ -42,8 +47,14 @@ const AdminDashboard = () => {
     <DashboardLayout title="Admin Overview">
       <style>{styles}</style>
       
-      <div className="lms-stats-grid">
-        <div className="lms-stat-card">
+      {loading ? (
+        <div className="lms-loading-container" style={{ minHeight: '300px' }}>
+          <div className="lms-spinner-large" />
+          <div style={{ fontWeight: 600, color: '#64748b' }}>Loading dashboard overview...</div>
+        </div>
+      ) : (
+        <div className="lms-stats-grid">
+          <div className="lms-stat-card">
           <div className="lms-stat-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
           </div>
@@ -71,6 +82,7 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
+      )}
     </DashboardLayout>
   );
 };
