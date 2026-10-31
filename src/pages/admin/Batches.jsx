@@ -14,7 +14,7 @@ const Batches = () => {
     enabled: false,
     scheduleType: 'daily',
     refreshIntervalDays: 1,
-    runTime: '06:00',
+    runTime: '02:00',
     runDays: [1, 2, 3, 4, 5],
     scope: 'all',
     linkMode: 'single_shared',
@@ -73,7 +73,7 @@ const Batches = () => {
           enabled: !!cfg.enabled,
           scheduleType: cfg.scheduleType || 'daily',
           refreshIntervalDays: cfg.refreshIntervalDays || 1,
-          runTime: cfg.runTime || '06:00',
+          runTime: cfg.runTime || '02:00',
           runDays: Array.isArray(cfg.runDays) ? cfg.runDays : [1, 2, 3, 4, 5],
           scope: cfg.scope || 'all',
           linkMode: cfg.linkMode || 'single_shared',
@@ -492,13 +492,19 @@ const Batches = () => {
 
                 {/* Daily Execution Time */}
                 <div className="lms-form-group">
-                  <label>Run Time (24h format)</label>
-                  <input 
-                    type="time" 
-                    className="lms-input" 
-                    value={cronConfig.runTime || '06:00'} 
-                    onChange={e => setCronConfig({...cronConfig, runTime: e.target.value})} 
-                  />
+                  <label>Run Time (IST - Asia/Kolkata)</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input 
+                      type="time" 
+                      className="lms-input" 
+                      style={{ marginBottom: 0, width: '140px' }}
+                      value={cronConfig.runTime || '02:00'} 
+                      onChange={e => setCronConfig({...cronConfig, runTime: e.target.value})} 
+                    />
+                    <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                      Indian Standard Time. Scheduled at <strong>02:00 AM IST</strong> (runs automatically on Render).
+                    </span>
+                  </div>
                 </div>
 
                 {/* Days of Week */}
