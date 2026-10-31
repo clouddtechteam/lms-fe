@@ -8,8 +8,8 @@ const getHeaders = () => {
   };
 };
 
-export const getStudents = async () => {
-  const res = await fetch(`${BASE_URL}/students`, { headers: getHeaders() });
+export const getStudents = async (page = 1, limit = 30) => {
+  const res = await fetch(`${BASE_URL}/students?page=${page}&limit=${limit}`, { headers: getHeaders() });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || 'Failed to fetch students');
   return data;

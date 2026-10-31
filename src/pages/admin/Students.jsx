@@ -9,6 +9,9 @@ import '../../admin-unified.css';
 const Students = () => {
   const [students, setStudents] = useState([]);
   const [batches, setBatches] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalStudents, setTotalStudents] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
@@ -41,9 +44,24 @@ const Students = () => {
     setBatches(data);
   };
 
-  const fetchStudents = async () => {
-    const data = await getStudents();
-    setStudents(data);
+  const fetchStudents = async (pageNumber = 1) => {
+    try {
+      setFetchLoading(true);
+      const res = await getStudents(pageNumber, 30);
+      if (res && res.students) {
+        setStudents(res.students);
+        setPage(res.page || 1);
+        setTotalPages(res.totalPages || 1);
+        setTotalStudents(res.total || res.students.length);
+      } else if (Array.isArray(res)) {
+        setStudents(res);
+        setTotalStudents(res.length);
+      }
+    } catch (err) {
+      console.error('Error fetching students:', err);
+    } finally {
+      setFetchLoading(false);
+    }
   };
 
   const handleManualAdd = async (e) => {
@@ -53,7 +71,7 @@ const Students = () => {
       await createStudent(formData);
       setShowModal(false);
       setFormData({ firstName: '', lastName: '', email: '', phone: '', enrollmentNo: '', dob: '', batchId: [], status: 'active', startDate: '', endDate: '' });
-      fetchStudents();
+      fetchStudents(1);
     } catch (err) { alert(err.message); } finally { setLoading(false); }
   };
 
@@ -88,11 +106,11 @@ const Students = () => {
     try {
       await addSubscription(selectedStudent._id, newBatchId);
       setNewBatchId('');
-      fetchStudents();
-      // Refetch current student details to show the new sub
-      const data = await getStudents();
-      const updated = data.find(s => s._id === selectedStudent._id);
-      handleRowClick(updated);
+      fetchStudents(page);
+      const data = await getStudents(page, 30);
+      const studentList = data.students || (Array.isArray(data) ? data : []);
+      const updated = studentList.find(s => s._id === selectedStudent._id);
+      if (updated) handleRowClick(updated);
       alert('Batch added to subscription!');
     } catch (err) {
       alert(err.message);
@@ -105,7 +123,7 @@ const Students = () => {
     if (!window.confirm('Delete?')) return;
     await deleteStudent(id);
     if (selectedStudent?._id === id) setSelectedStudent(null);
-    fetchStudents();
+    fetchStudents(page);
   };
 
   const handleDownloadTemplate = () => {
@@ -130,9 +148,9 @@ const Students = () => {
 
   return (
     <DashboardLayout title="Students">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 style={{ margin: 0 }}>Students ({students.length})</h2>
-        <div style={{ display: 'flex', gap: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+        <h2 style={{ margin: 0 }}>Students ({totalStudents})</h2>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button className="lms-btn lms-btn-outline" onClick={handleDownloadTemplate}>Download Template</button>
           <button className="lms-btn lms-btn-outline" onClick={() => document.getElementById('st-excel').click()}>Import Excel</button>
           <input type="file" id="st-excel" hidden accept=".xlsx, .xls" onChange={e => { if(e.target.files[0]) setImportFile(e.target.files[0]); e.target.value=null; }} />
@@ -186,6 +204,36 @@ const Students = () => {
                   ))}
                 </tbody>
               </table>
+
+              {/* Pagination Bar */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderTop: '1px solid #e2e8f0', background: '#fafafa', position: 'sticky', bottom: 0 }}>
+                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                  Showing {students.length} of {totalStudents} students (Page {page} of {totalPages})
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    type="button"
+                    className="lms-btn lms-btn-outline" 
+                    onClick={() => fetchStudents(page - 1)} 
+                    disabled={page <= 1 || fetchLoading}
+                    style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+                  >
+                    ← Previous
+                  </button>
+                  <span style={{ display: 'flex', alignItems: 'center', padding: '0 8px', fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>
+                    {page}
+                  </span>
+                  <button 
+                    type="button"
+                    className="lms-btn lms-btn-outline" 
+                    onClick={() => fetchStudents(page + 1)} 
+                    disabled={page >= totalPages || fetchLoading}
+                    style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className={`lms-details-panel ${selectedStudent ? 'open' : ''}`}>

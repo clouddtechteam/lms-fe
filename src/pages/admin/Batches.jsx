@@ -13,10 +13,12 @@ const Batches = () => {
   const [cronConfig, setCronConfig] = useState({
     enabled: false,
     scheduleType: 'daily',
+    refreshIntervalDays: 1,
     runTime: '06:00',
     runDays: [1, 2, 3, 4, 5],
     scope: 'all',
-    batchIds: []
+    batchIds: [],
+    lastRunResults: []
   });
   const [cronLoading, setCronLoading] = useState(false);
   const [cronSyncing, setCronSyncing] = useState(false);
@@ -69,13 +71,15 @@ const Batches = () => {
         setCronConfig({
           enabled: !!cfg.enabled,
           scheduleType: cfg.scheduleType || 'daily',
+          refreshIntervalDays: cfg.refreshIntervalDays || 1,
           runTime: cfg.runTime || '06:00',
           runDays: Array.isArray(cfg.runDays) ? cfg.runDays : [1, 2, 3, 4, 5],
           scope: cfg.scope || 'all',
           batchIds: Array.isArray(cfg.batchIds) ? cfg.batchIds : [],
           lastRunAt: cfg.lastRunAt,
           lastRunStatus: cfg.lastRunStatus,
-          lastRunSummary: cfg.lastRunSummary
+          lastRunSummary: cfg.lastRunSummary,
+          lastRunResults: Array.isArray(cfg.lastRunResults) ? cfg.lastRunResults : []
         });
       }
     } catch (err) {
@@ -101,15 +105,38 @@ const Batches = () => {
   };
 
   const handleTriggerCronNow = async () => {
-    if (!window.confirm('Generate fresh Zoom meeting credentials for eligible batches right now?')) return;
+    const cleanBatchIds = (cronConfig.batchIds || []).map(b => b._id || b);
+    if (cronConfig.scope === 'selective' && cleanBatchIds.length === 0) {
+      alert('Please select at least one batch under "Selective Batches" before generating.');
+      return;
+    }
+
+    if (!window.confirm(`Generate fresh Zoom meeting links for ${cronConfig.scope === 'selective' ? `${cleanBatchIds.length} selected` : 'all'} batches right now?`)) return;
+
     setCronSyncing(true);
     try {
-      const res = await triggerCronNow();
+      // 1. Auto save config state first
+      await updateCronConfig({ ...cronConfig, batchIds: cleanBatchIds });
+
+      // 2. Trigger instant generation for target batches (bypasses day of week)
+      const targetIds = cronConfig.scope === 'selective' ? cleanBatchIds : null;
+      const res = await triggerCronNow(targetIds);
+
       setToastMsg(res.results?.summary || 'Meeting generation completed!');
       setTimeout(() => setToastMsg(''), 4000);
-      await fetchBatches();
-      const cfg = await getCronConfig();
-      if (cfg) setCronConfig(cfg);
+
+      // 3. Update modal with fresh generated links
+      const freshResults = res.results?.details || [];
+      setCronConfig(prev => ({
+        ...prev,
+        lastRunAt: new Date().toISOString(),
+        lastRunStatus: res.results?.failed === 0 ? 'success' : (res.results?.successful > 0 ? 'partial' : 'failed'),
+        lastRunSummary: res.results?.summary || '',
+        lastRunResults: freshResults
+      }));
+
+      // 4. Refresh background batches list
+      fetchBatches();
     } catch (err) {
       alert(err.message || 'Sync failed');
     } finally {
@@ -427,6 +454,40 @@ const Batches = () => {
                   </label>
                 </div>
 
+                {/* Refresh Recurrence / Frequency */}
+                <div className="lms-form-group">
+                  <label>Refresh Frequency (Interval)</label>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#475569' }}>Refresh every</span>
+                      <input 
+                        type="number" 
+                        min="1" 
+                        max="30" 
+                        className="lms-input" 
+                        style={{ width: '70px', padding: '6px 10px', marginBottom: 0 }}
+                        value={cronConfig.refreshIntervalDays || 1} 
+                        onChange={e => setCronConfig({...cronConfig, refreshIntervalDays: Math.max(1, parseInt(e.target.value) || 1), scheduleType: 'interval'})} 
+                      />
+                      <span style={{ fontSize: '0.85rem', color: '#475569' }}>day(s)</span>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      {[1, 2, 3, 7].map(days => (
+                        <button
+                          key={days}
+                          type="button"
+                          className={`lms-btn ${(cronConfig.refreshIntervalDays || 1) === days ? 'lms-btn-primary' : 'lms-btn-outline'}`}
+                          style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                          onClick={() => setCronConfig({...cronConfig, refreshIntervalDays: days, scheduleType: 'interval'})}
+                        >
+                          {days === 1 ? 'Daily (1 Day)' : days === 7 ? 'Weekly (7 Days)' : `Every ${days} Days`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
                 {/* Daily Execution Time */}
                 <div className="lms-form-group">
                   <label>Run Time (24h format)</label>
@@ -497,7 +558,7 @@ const Batches = () => {
                         checked={cronConfig.scope === 'selective'} 
                         onChange={() => setCronConfig({...cronConfig, scope: 'selective'})} 
                       />
-                      Selective Batches
+                      Selective Batches ({cronConfig.batchIds?.length || 0})
                     </label>
                   </div>
 
@@ -530,9 +591,73 @@ const Batches = () => {
 
                 {/* Last Run Info */}
                 {cronConfig.lastRunAt && (
-                  <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.8rem', color: '#64748b', marginBottom: '20px' }}>
+                  <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.8rem', color: '#64748b', marginBottom: '16px' }}>
                     <div><strong>Last Run:</strong> {new Date(cronConfig.lastRunAt).toLocaleString()} ({cronConfig.lastRunStatus})</div>
-                    {cronConfig.lastRunSummary && <div style={{ marginTop: '4px' }}>{cronConfig.lastRunSummary}</div>}
+                    {cronConfig.lastRunSummary && <div style={{ marginTop: '4px', fontWeight: 500 }}>{cronConfig.lastRunSummary}</div>}
+                  </div>
+                )}
+
+                {/* Generated New Links List Display */}
+                {cronConfig.lastRunResults && cronConfig.lastRunResults.length > 0 && (
+                  <div style={{ marginBottom: '20px', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px', background: '#f8fafc' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e293b' }}>
+                        Generated Zoom Links ({cronConfig.lastRunResults.filter(r => r.status === 'success').length})
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Active credentials</span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '200px', overflowY: 'auto' }}>
+                      {cronConfig.lastRunResults.map((item, idx) => (
+                        <div key={idx} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                            <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.85rem' }}>{item.batchName}</div>
+                            <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '4px', background: item.status === 'success' ? '#f0fdf4' : '#fef2f2', color: item.status === 'success' ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
+                              {item.status === 'success' ? 'Active' : 'Failed'}
+                            </span>
+                          </div>
+
+                          {item.status === 'success' ? (
+                            <>
+                              <div style={{ display: 'flex', gap: '14px', fontSize: '0.78rem', color: '#475569', marginBottom: '6px' }}>
+                                <span>ID: <strong style={{ color: '#0f172a' }}>{item.meetingNumber}</strong></span>
+                                <span>Password: <strong style={{ color: '#0f172a' }}>{item.password || '••••••'}</strong></span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <input 
+                                  readOnly 
+                                  value={item.joinUrl} 
+                                  style={{ flex: 1, padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.75rem', background: '#f8fafc', color: '#2563eb' }}
+                                />
+                                <button 
+                                  type="button" 
+                                  className="lms-copy-btn" 
+                                  style={{ padding: '5px 10px', fontSize: '0.75rem' }}
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(item.joinUrl);
+                                    setToastMsg(`Copied link for ${item.batchName}!`);
+                                    setTimeout(() => setToastMsg(''), 3000);
+                                  }}
+                                >
+                                  Copy
+                                </button>
+                                <a 
+                                  href={item.joinUrl} 
+                                  target="_blank" 
+                                  rel="noreferrer" 
+                                  className="lms-btn lms-btn-outline" 
+                                  style={{ padding: '5px 10px', fontSize: '0.75rem', textDecoration: 'none' }}
+                                >
+                                  Open
+                                </a>
+                              </div>
+                            </>
+                          ) : (
+                            <div style={{ color: '#dc2626', fontSize: '0.78rem' }}>Error: {item.error}</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 

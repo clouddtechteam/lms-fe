@@ -83,10 +83,11 @@ export const updateCronConfig = async (configData) => {
   return data;
 };
 
-export const triggerCronNow = async () => {
+export const triggerCronNow = async (batchIds = null) => {
   const res = await fetch(`${BASE_URL}/meet/cron/trigger-now`, {
     method: 'POST',
-    headers: getHeaders()
+    headers: getHeaders(),
+    body: JSON.stringify({ batchIds })
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || 'Failed to trigger meeting generation');

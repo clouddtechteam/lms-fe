@@ -28,11 +28,11 @@ const AdminDashboard = () => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const [b, t, s] = await Promise.all([getBatches(), getTrainers(), getStudents()]);
+        const [b, t, s] = await Promise.all([getBatches(), getTrainers(), getStudents(1, 1)]);
         setStats({
           batches: b?.length || 0,
           trainers: t?.length || 0,
-          students: s?.length || 0,
+          students: s?.total ?? (Array.isArray(s) ? s.length : (s?.students?.length || 0)),
         });
       } catch (err) {
         console.error('Failed to fetch admin stats:', err);
